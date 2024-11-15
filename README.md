@@ -4,7 +4,7 @@ rlibbencode
 This is an implementation of Bencode for Rust. Bencode is used for DHTs, Torrents, and Google DataServers. Its a lightweight fast data serialization.
 [Wikipedia](https://en.wikipedia.org/wiki/Bencode)
 
-I have also made an implementation of Bencode with [Java](https://github.com/octorrent/jlibbencode).
+I have also made an implementation of Bencode with [Java](https://github.com/sectorrent/jlibbencode).
 
 Implemented Types
 -----
