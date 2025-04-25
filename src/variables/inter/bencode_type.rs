@@ -1,6 +1,7 @@
+use std::io;
+
 #[derive(Debug, PartialEq)]
 pub enum BencodeType {
-
     Number,
     Object,
     Array,
@@ -41,13 +42,13 @@ impl BencodeType {
         }
     }
 
-    pub fn type_by_prefix(c: u8) -> Result<Self, String> {
+    pub fn type_by_prefix(c: u8) -> io::Result<Self> {
         for btype in [BencodeType::Number, BencodeType::Array, BencodeType::Object, BencodeType::Bytes] {
             if btype.is_prefix(c) {
                 return Ok(btype);
             }
         }
 
-        Err("Type prefix is not valid.".to_string())
+        Err(io::Error::new(io::ErrorKind::InvalidInput, "Type prefix is not valid."))
     }
 }

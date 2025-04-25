@@ -1,14 +1,15 @@
 use std::any::Any;
+use std::io;
 
 pub trait BencodeVariable {
 
     fn encode(&self) -> Vec<u8>;
 
-    fn decode(buf: &[u8]) -> Result<Self, String> where Self: Sized {
+    fn decode(buf: &[u8]) -> io::Result<Self> where Self: Sized {
         Self::decode_with_offset(buf, 0)
     }
 
-    fn decode_with_offset(buf: &[u8], off: usize) -> Result<Self, String> where Self: Sized;//Self where Self: Sized;
+    fn decode_with_offset(buf: &[u8], off: usize) -> io::Result<Self> where Self: Sized;//Self where Self: Sized;
 
     fn as_any(&self) -> &dyn Any;
 

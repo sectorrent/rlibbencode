@@ -1,4 +1,5 @@
 use std::any::Any;
+use std::io;
 use std::str::from_utf8;
 
 use crate::variables::inter::bencode_variable::BencodeVariable;
@@ -18,8 +19,8 @@ impl BencodeBytes {
         &self.b
     }
 
-    pub fn as_str(&self) -> Result<&str, String> {
-        from_utf8(&self.b).map_err(|e| e.to_string())
+    pub fn as_str(&self) -> io::Result<&str> {
+        from_utf8(&self.b).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))
     }
 }
 
@@ -90,10 +91,10 @@ impl BencodeVariable for BencodeBytes {
         r
     }
 
-    fn decode_with_offset(buf: &[u8], off: usize) -> Result<Self, String> where Self: Sized {
-        let type_ = BencodeType::type_by_prefix(buf[off]).map_err(|e| e.to_string())?;
+    fn decode_with_offset(buf: &[u8], off: usize) -> io::Result<Self> where Self: Sized {
+        let type_ = BencodeType::type_by_prefix(buf[off])?;
         if type_ != Self::TYPE {
-            return Err("Byte array is not a bencode bytes / string.".to_string());
+            return Err(io::Error::new(io::ErrorKind::InvalidData, "Byte array is not a bencode bytes / string."));
         }
 
         let mut off = off;
@@ -116,36 +117,6 @@ impl BencodeVariable for BencodeBytes {
             s
         })
     }
-    /*
-    fn encode(&self) -> &[u8] {
-        let mut data = vec![0u8; self.s];
-
-        let len_str = self.b.len().to_string();
-        let len_bytes = len_str.as_bytes();
-
-        let mut index = 0;
-        for &byte in len_bytes {
-            data[index] = byte;
-            index += 1;
-        }
-        data[index] = Self::TYPE.delimiter();
-        index += 1;
-
-        for &byte in self.b.iter() {
-            data[index] = byte;
-            index += 1;
-        }
-
-        let ptr = data.as_ptr();
-        let len = data.len();
-
-        forget(data);
-
-        unsafe {
-            from_raw_parts(ptr, len)
-        }
-    }
-    */
 
     fn as_any(&self) -> &dyn Any {
         self

@@ -1,4 +1,5 @@
 use std::any::Any;
+use std::io;
 use std::str::{from_utf8, FromStr};
 
 use crate::variables::inter::bencode_variable::BencodeVariable;
@@ -14,9 +15,9 @@ impl BencodeNumber {
 
     const TYPE: BencodeType = BencodeType::Number;
 
-    pub fn parse<V>(&self) -> Result<V, String> where V: FromStr {
-        let str = from_utf8(&self.n).map_err(|e| e.to_string())?;
-        str.parse::<V>().map_err(|_| "Failed to parse number.".to_string())
+    pub fn parse<V>(&self) -> io::Result<V> where V: FromStr {
+        let str = from_utf8(&self.n).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+        str.parse::<V>().map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "Failed to parse number."))
     }
 }
 
@@ -67,10 +68,10 @@ impl BencodeVariable for BencodeNumber {
         r
     }
 
-    fn decode_with_offset(buf: &[u8], off: usize) -> Result<Self, String> where Self: Sized {
-        let type_ = BencodeType::type_by_prefix(buf[off]).map_err(|e| e.to_string())?;
+    fn decode_with_offset(buf: &[u8], off: usize) -> io::Result<Self> where Self: Sized {
+        let type_ = BencodeType::type_by_prefix(buf[off])?;
         if type_ != Self::TYPE {
-            return Err("Byte array is not a bencode number.".to_string());
+            return Err(io::Error::new(io::ErrorKind::InvalidData, "Byte array is not a bencode number."));
         }
 
         let mut off = off+1;

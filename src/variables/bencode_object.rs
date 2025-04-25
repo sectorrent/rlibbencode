@@ -1,4 +1,5 @@
 use std::any::Any;
+use std::io;
 use std::str::FromStr;
 use crate::utils::ordered_map::OrderedMap;
 use crate::variables::bencode_array::BencodeArray;
@@ -35,92 +36,64 @@ impl BencodeObject {
         self.m.remove(&BencodeBytes::from(key));
     }
 
-    pub fn get_number<V>(&self, key: &str) -> Result<V, String> where V: FromStr {
+    pub fn get_number<V>(&self, key: &str) -> io::Result<V> where V: FromStr {
         let key = BencodeBytes::from(key);
         match self.m.get(&key) {
-            Some(num) => {
-                Ok(num.as_any().downcast_ref::<BencodeNumber>().unwrap().parse::<V>()?)
-            },
-            None => {
-                Err("Variable doesn't exist.".to_string())
-            }
+            Some(num) => Ok(num.as_any().downcast_ref::<BencodeNumber>().unwrap().parse::<V>()?),
+            None => Err(io::Error::new(io::ErrorKind::NotFound, "Variable doesn't exist."))
         }
         //self.m.get(&key).unwrap().as_any().downcast_ref::<BencodeNumber>().unwrap().parse::<V>()
     }
 
-    pub fn get_array(&self, key: &str) -> Result<&BencodeArray, String> {
+    pub fn get_array(&self, key: &str) -> io::Result<&BencodeArray> {
         let key = BencodeBytes::from(key);
         match self.m.get(&key) {
-            Some(arr) => {
-                Ok(arr.as_any().downcast_ref::<BencodeArray>().unwrap())
-            },
-            None => {
-                Err("Variable doesn't exist.".to_string())
-            }
+            Some(arr) => Ok(arr.as_any().downcast_ref::<BencodeArray>().unwrap()),
+            None => Err(io::Error::new(io::ErrorKind::NotFound, "Variable doesn't exist."))
         }
         //Ok(self.m.get(&key).unwrap().as_any().downcast_ref::<BencodeArray>().unwrap())
     }
 
-    pub fn get_array_mut(&mut self, key: &str) -> Result<&mut BencodeArray, String> {
+    pub fn get_array_mut(&mut self, key: &str) -> io::Result<&mut BencodeArray> {
         let key = BencodeBytes::from(key);
         match self.m.get_mut(&key) {
-            Some(arr) => {
-                Ok(arr.as_any_mut().downcast_mut::<BencodeArray>().unwrap())
-            },
-            None => {
-                Err("Variable doesn't exist.".to_string())
-            }
+            Some(arr) => Ok(arr.as_any_mut().downcast_mut::<BencodeArray>().unwrap()),
+            None => Err(io::Error::new(io::ErrorKind::NotFound, "Variable doesn't exist."))
         }
         //Ok(self.m.get_mut(&key).unwrap().as_any_mut().downcast_mut::<BencodeArray>().unwrap())
     }
 
-    pub fn get_object(&self, key: &str) -> Result<&BencodeObject, String> {
+    pub fn get_object(&self, key: &str) -> io::Result<&BencodeObject> {
         let key = BencodeBytes::from(key);
         match self.m.get(&key) {
-            Some(obj) => {
-                Ok(obj.as_any().downcast_ref::<BencodeObject>().unwrap())
-            },
-            None => {
-                Err("Variable doesn't exist.".to_string())
-            }
+            Some(obj) => Ok(obj.as_any().downcast_ref::<BencodeObject>().unwrap()),
+            None => Err(io::Error::new(io::ErrorKind::NotFound, "Variable doesn't exist."))
         }
         //Ok(self.m.get(&key).unwrap().as_any().downcast_ref::<BencodeObject>().unwrap())
     }
 
-    pub fn get_object_mut(&mut self, key: &str) -> Result<&mut BencodeObject, String> {
+    pub fn get_object_mut(&mut self, key: &str) -> io::Result<&mut BencodeObject> {
         let key = BencodeBytes::from(key);
         match self.m.get_mut(&key) {
-            Some(obj) => {
-                Ok(obj.as_any_mut().downcast_mut::<BencodeObject>().unwrap())
-            },
-            None => {
-                Err("Variable doesn't exist.".to_string())
-            }
+            Some(obj) => Ok(obj.as_any_mut().downcast_mut::<BencodeObject>().unwrap()),
+            None => Err(io::Error::new(io::ErrorKind::NotFound, "Variable doesn't exist."))
         }
         //Ok(self.m.get_mut(&key).unwrap().as_any_mut().downcast_mut::<BencodeObject>().unwrap())
     }
 
-    pub fn get_bytes(&self, key: &str) -> Result<&[u8], String> {
+    pub fn get_bytes(&self, key: &str) -> io::Result<&[u8]> {
         let key = BencodeBytes::from(key);
         match self.m.get(&key) {
-            Some(str) => {
-                Ok(str.as_any().downcast_ref::<BencodeBytes>().unwrap().as_bytes())
-            },
-            None => {
-                Err("Variable doesn't exist.".to_string())
-            }
+            Some(str) => Ok(str.as_any().downcast_ref::<BencodeBytes>().unwrap().as_bytes()),
+            None => Err(io::Error::new(io::ErrorKind::NotFound, "Variable doesn't exist."))
         }
     }
 
-    pub fn get_string(&self, key: &str) -> Result<&str, String> {
+    pub fn get_string(&self, key: &str) -> io::Result<&str> {
         let key = BencodeBytes::from(key);
         match self.m.get(&key) {
-            Some(str) => {
-                Ok(str.as_any().downcast_ref::<BencodeBytes>().unwrap().as_str()?)
-            },
-            None => {
-                Err("Variable doesn't exist.".to_string())
-            }
+            Some(str) => Ok(str.as_any().downcast_ref::<BencodeBytes>().unwrap().as_str()?),
+            None => Err(io::Error::new(io::ErrorKind::NotFound, "Variable doesn't exist."))
         }
     }
 
@@ -225,10 +198,10 @@ impl BencodeVariable for BencodeObject {
         buf
     }
 
-    fn decode_with_offset(buf: &[u8], off: usize) -> Result<Self, String> where Self: Sized {//Self where Self: Sized {
-        let type_ = BencodeType::type_by_prefix(buf[off]).map_err(|e| e.to_string())?;
+    fn decode_with_offset(buf: &[u8], off: usize) -> io::Result<Self> where Self: Sized {//Self where Self: Sized {
+        let type_ = BencodeType::type_by_prefix(buf[off])?;
         if type_ != Self::TYPE {
-            return Err("Byte array is not a bencode object.".to_string());
+            return Err(io::Error::new(io::ErrorKind::InvalidData, "Byte array is not a bencode object."));
         }
 
         let mut off = off+1;
