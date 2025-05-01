@@ -1,2 +1,2 @@
-pub mod bencode_type;
+pub mod bencode_types;
 pub mod bencode_variable;

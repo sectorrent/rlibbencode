@@ -3,7 +3,7 @@ use std::io;
 use std::str::{from_utf8, FromStr};
 
 use crate::variables::inter::bencode_variable::BencodeVariable;
-use crate::variables::inter::bencode_type::BencodeType;
+use crate::variables::inter::bencode_types::BencodeTypes;
 
 #[derive(Debug, Eq, Hash, PartialEq, Clone)]
 pub struct BencodeNumber {
@@ -12,8 +12,6 @@ pub struct BencodeNumber {
 }
 
 impl BencodeNumber {
-
-    const TYPE: BencodeType = BencodeType::Number;
 
     pub fn parse<V>(&self) -> io::Result<V> where V: FromStr {
         let str = from_utf8(&self.n).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
@@ -59,18 +57,22 @@ impl_decodable_number!(u8 u16 u32 u64 u128 i8 i16 i32 i64 i128 isize f32 f64);
 
 impl BencodeVariable for BencodeNumber {
 
+    fn get_type(&self) -> BencodeTypes {
+        BencodeTypes::Number
+    }
+
     fn encode(&self) -> Vec<u8> {
         let mut r: Vec<u8> = Vec::with_capacity(self.s);
 
-        r.push(Self::TYPE.prefix());
+        r.push(BencodeTypes::Number.prefix());
         r.extend_from_slice(&self.n);
-        r.push(Self::TYPE.suffix());
+        r.push(BencodeTypes::Number.suffix());
         r
     }
 
     fn decode_with_offset(buf: &[u8], off: usize) -> io::Result<Self> where Self: Sized {
-        let type_ = BencodeType::type_by_prefix(buf[off])?;
-        if type_ != Self::TYPE {
+        let type_ = BencodeTypes::type_by_prefix(buf[off])?;
+        if type_ != BencodeTypes::Number {
             return Err(io::Error::new(io::ErrorKind::InvalidData, "Byte array is not a bencode number."));
         }
 
@@ -79,7 +81,7 @@ impl BencodeVariable for BencodeNumber {
         let mut c = [0u8; 32];
         let mut s = off;
 
-        while buf[off] != Self::TYPE.suffix() {
+        while buf[off] != BencodeTypes::Number.suffix() {
             c[off - s] = buf[off];
             off += 1;
         }

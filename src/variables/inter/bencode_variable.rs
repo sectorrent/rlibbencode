@@ -1,7 +1,10 @@
 use std::any::Any;
 use std::io;
+use crate::variables::inter::bencode_types::BencodeTypes;
 
 pub trait BencodeVariable {
+
+    fn get_type(&self) -> BencodeTypes;
 
     fn encode(&self) -> Vec<u8>;
 

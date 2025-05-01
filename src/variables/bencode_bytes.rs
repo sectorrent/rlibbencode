@@ -3,7 +3,7 @@ use std::io;
 use std::str::from_utf8;
 
 use crate::variables::inter::bencode_variable::BencodeVariable;
-use crate::variables::inter::bencode_type::BencodeType;
+use crate::variables::inter::bencode_types::BencodeTypes;
 
 #[derive(Debug, Eq, Hash, PartialEq, Clone)]
 pub struct BencodeBytes {
@@ -12,8 +12,6 @@ pub struct BencodeBytes {
 }
 
 impl BencodeBytes {
-
-    const TYPE: BencodeType = BencodeType::Bytes;
 
     pub fn as_bytes(&self) -> &[u8] {
         &self.b
@@ -82,18 +80,22 @@ impl From<String> for BencodeBytes {
 
 impl BencodeVariable for BencodeBytes {
 
+    fn get_type(&self) -> BencodeTypes {
+        BencodeTypes::Bytes
+    }
+
     fn encode(&self) -> Vec<u8> {
         let mut r: Vec<u8> = Vec::with_capacity(self.s);
 
         r.extend_from_slice(self.b.len().to_string().as_bytes());
-        r.push(Self::TYPE.delimiter());
+        r.push(BencodeTypes::Bytes.delimiter());
         r.extend_from_slice(&self.b);
         r
     }
 
     fn decode_with_offset(buf: &[u8], off: usize) -> io::Result<Self> where Self: Sized {
-        let type_ = BencodeType::type_by_prefix(buf[off])?;
-        if type_ != Self::TYPE {
+        let type_ = BencodeTypes::type_by_prefix(buf[off])?;
+        if type_ != BencodeTypes::Bytes {
             return Err(io::Error::new(io::ErrorKind::InvalidData, "Byte array is not a bencode bytes / string."));
         }
 
@@ -101,7 +103,7 @@ impl BencodeVariable for BencodeBytes {
         let mut len_bytes = [0u8; 8];
         let mut s = off;
 
-        while buf[off] != Self::TYPE.delimiter() {
+        while buf[off] != BencodeTypes::Bytes.delimiter() {
             len_bytes[off - s] = buf[off];
             off += 1;
         }

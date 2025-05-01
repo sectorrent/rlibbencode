@@ -6,7 +6,7 @@ use crate::variables::bencode_array::BencodeArray;
 use crate::variables::bencode_bytes::BencodeBytes;
 use crate::variables::bencode_number::BencodeNumber;
 use crate::variables::inter::bencode_variable::BencodeVariable;
-use crate::variables::inter::bencode_type::BencodeType;
+use crate::variables::inter::bencode_types::BencodeTypes;
 
 //#[derive(Debug, Clone, PartialEq)]
 pub struct BencodeObject {
@@ -19,8 +19,6 @@ pub trait PutObject<V> {
 }
 
 impl BencodeObject {
-
-    const TYPE: BencodeType = BencodeType::Object;
 
     pub fn new() -> Self {
         Self {
@@ -185,22 +183,26 @@ impl_object_number!(u8 u16 u32 u64 u128 i8 i16 i32 i64 i128 isize f32 f64);
 
 impl BencodeVariable for BencodeObject {
 
+    fn get_type(&self) -> BencodeTypes {
+        BencodeTypes::Object
+    }
+
     fn encode(&self) -> Vec<u8> {
         let mut buf: Vec<u8> = Vec::with_capacity(self.byte_size());
-        buf.push(Self::TYPE.prefix());
+        buf.push(BencodeTypes::Object.prefix());
 
         for (key, value) in self.m.iter() {
             buf.extend_from_slice(&key.encode());
             buf.extend_from_slice(&value.encode());
         }
 
-        buf.push(Self::TYPE.suffix());
+        buf.push(BencodeTypes::Object.suffix());
         buf
     }
 
     fn decode_with_offset(buf: &[u8], off: usize) -> io::Result<Self> where Self: Sized {//Self where Self: Sized {
-        let type_ = BencodeType::type_by_prefix(buf[off])?;
-        if type_ != Self::TYPE {
+        let type_ = BencodeTypes::type_by_prefix(buf[off])?;
+        if type_ != BencodeTypes::Object {
             return Err(io::Error::new(io::ErrorKind::InvalidData, "Byte array is not a bencode object."));
         }
 
@@ -208,28 +210,28 @@ impl BencodeVariable for BencodeObject {
 
         let mut res = OrderedMap::<BencodeBytes, Box<dyn BencodeVariable>>::new();//::with_hasher(Default::default());
 
-        while buf[off] != Self::TYPE.suffix() {
+        while buf[off] != BencodeTypes::Object.suffix() {
             let key = BencodeBytes::decode_with_offset(buf, off)?;
             off += key.byte_size();
-            let type_ = BencodeType::type_by_prefix(buf[off])?;
+            let type_ = BencodeTypes::type_by_prefix(buf[off])?;
 
             let value = match type_ {
-                BencodeType::Number => {
+                BencodeTypes::Number => {
                     let value = BencodeNumber::decode_with_offset(buf, off)?;
                     off += value.byte_size();
                     Box::new(value) as Box<dyn BencodeVariable>
                 },
-                BencodeType::Array => {
+                BencodeTypes::Array => {
                     let value = BencodeArray::decode_with_offset(buf, off)?;
                     off += value.byte_size();
                     Box::new(value) as Box<dyn BencodeVariable>
                 },
-                BencodeType::Object => {
+                BencodeTypes::Object => {
                     let value = BencodeObject::decode_with_offset(buf, off)?;
                     off += value.byte_size();
                     Box::new(value) as Box<dyn BencodeVariable>
                 },
-                BencodeType::Bytes => {
+                BencodeTypes::Bytes => {
                     let value = BencodeBytes::decode_with_offset(buf, off)?;
                     off += value.byte_size();
                     Box::new(value) as Box<dyn BencodeVariable>
