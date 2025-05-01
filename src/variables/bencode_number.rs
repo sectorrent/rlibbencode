@@ -105,14 +105,6 @@ impl BencodeVariable for BencodeNumber {
         self
     }
 
-    fn upcast(&self) -> &dyn BencodeVariable {
-        self
-    }
-
-    fn upcast_mut(&mut self) -> &mut dyn BencodeVariable {
-        self
-    }
-
     fn byte_size(&self) -> usize {
         self.s
     }

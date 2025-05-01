@@ -18,10 +18,6 @@ pub trait BencodeVariable {
 
     fn as_any_mut(&mut self) -> &mut dyn Any;
 
-    fn upcast(&self) -> &dyn BencodeVariable;
-
-    fn upcast_mut(&mut self) -> &mut dyn BencodeVariable;
-
     fn byte_size(&self) -> usize;
 
     fn to_string(&self) -> String;
