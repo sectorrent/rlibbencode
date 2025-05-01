@@ -34,64 +34,69 @@ impl BencodeObject {
         self.m.remove(&BencodeBytes::from(key));
     }
 
-    pub fn get_number<V>(&self, key: &str) -> io::Result<V> where V: FromStr {
+    pub fn get_number<V>(&self, key: &str) -> Option<V> where V: FromStr {
         let key = BencodeBytes::from(key);
         match self.m.get(&key) {
-            Some(num) => Ok(num.as_any().downcast_ref::<BencodeNumber>().unwrap().parse::<V>()?),
-            None => Err(io::Error::new(io::ErrorKind::NotFound, "Variable doesn't exist."))
+            Some(num) => {
+                match num.as_any().downcast_ref::<BencodeNumber>().unwrap().parse::<V>() {
+                    Ok(num) => Some(num),
+                    Err(_) => None
+                }
+            }
+            None => None
         }
-        //self.m.get(&key).unwrap().as_any().downcast_ref::<BencodeNumber>().unwrap().parse::<V>()
     }
 
-    pub fn get_array(&self, key: &str) -> io::Result<&BencodeArray> {
+    pub fn get_array(&self, key: &str) -> Option<&BencodeArray> {
         let key = BencodeBytes::from(key);
         match self.m.get(&key) {
-            Some(arr) => Ok(arr.as_any().downcast_ref::<BencodeArray>().unwrap()),
-            None => Err(io::Error::new(io::ErrorKind::NotFound, "Variable doesn't exist."))
+            Some(arr) => Some(arr.as_any().downcast_ref::<BencodeArray>().unwrap()),
+            None => None
         }
-        //Ok(self.m.get(&key).unwrap().as_any().downcast_ref::<BencodeArray>().unwrap())
     }
 
-    pub fn get_array_mut(&mut self, key: &str) -> io::Result<&mut BencodeArray> {
+    pub fn get_array_mut(&mut self, key: &str) -> Option<&mut BencodeArray> {
         let key = BencodeBytes::from(key);
         match self.m.get_mut(&key) {
-            Some(arr) => Ok(arr.as_any_mut().downcast_mut::<BencodeArray>().unwrap()),
-            None => Err(io::Error::new(io::ErrorKind::NotFound, "Variable doesn't exist."))
+            Some(arr) => Some(arr.as_any_mut().downcast_mut::<BencodeArray>().unwrap()),
+            None => None
         }
-        //Ok(self.m.get_mut(&key).unwrap().as_any_mut().downcast_mut::<BencodeArray>().unwrap())
     }
 
-    pub fn get_object(&self, key: &str) -> io::Result<&BencodeObject> {
+    pub fn get_object(&self, key: &str) -> Option<&BencodeObject> {
         let key = BencodeBytes::from(key);
         match self.m.get(&key) {
-            Some(obj) => Ok(obj.as_any().downcast_ref::<BencodeObject>().unwrap()),
-            None => Err(io::Error::new(io::ErrorKind::NotFound, "Variable doesn't exist."))
+            Some(obj) => Some(obj.as_any().downcast_ref::<BencodeObject>().unwrap()),
+            None => None
         }
-        //Ok(self.m.get(&key).unwrap().as_any().downcast_ref::<BencodeObject>().unwrap())
     }
 
-    pub fn get_object_mut(&mut self, key: &str) -> io::Result<&mut BencodeObject> {
+    pub fn get_object_mut(&mut self, key: &str) -> Option<&mut BencodeObject> {
         let key = BencodeBytes::from(key);
         match self.m.get_mut(&key) {
-            Some(obj) => Ok(obj.as_any_mut().downcast_mut::<BencodeObject>().unwrap()),
-            None => Err(io::Error::new(io::ErrorKind::NotFound, "Variable doesn't exist."))
-        }
-        //Ok(self.m.get_mut(&key).unwrap().as_any_mut().downcast_mut::<BencodeObject>().unwrap())
-    }
-
-    pub fn get_bytes(&self, key: &str) -> io::Result<&[u8]> {
-        let key = BencodeBytes::from(key);
-        match self.m.get(&key) {
-            Some(str) => Ok(str.as_any().downcast_ref::<BencodeBytes>().unwrap().as_bytes()),
-            None => Err(io::Error::new(io::ErrorKind::NotFound, "Variable doesn't exist."))
+            Some(obj) => Some(obj.as_any_mut().downcast_mut::<BencodeObject>().unwrap()),
+            None => None
         }
     }
 
-    pub fn get_string(&self, key: &str) -> io::Result<&str> {
+    pub fn get_bytes(&self, key: &str) -> Option<&[u8]> {
         let key = BencodeBytes::from(key);
         match self.m.get(&key) {
-            Some(str) => Ok(str.as_any().downcast_ref::<BencodeBytes>().unwrap().as_str()?),
-            None => Err(io::Error::new(io::ErrorKind::NotFound, "Variable doesn't exist."))
+            Some(str) => Some(str.as_any().downcast_ref::<BencodeBytes>().unwrap().as_bytes()),
+            None => None
+        }
+    }
+
+    pub fn get_string(&self, key: &str) -> Option<&str> {
+        let key = BencodeBytes::from(key);
+        match self.m.get(&key) {
+            Some(str) => {
+                match str.as_any().downcast_ref::<BencodeBytes>().unwrap().as_str() {
+                    Ok(str) => Some(str),
+                    Err(_) => None
+                }
+            }
+            None => None
         }
     }
 
