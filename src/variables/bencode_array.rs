@@ -82,10 +82,10 @@ impl BencodeArray {
         }
     }
 
-    pub fn get_string(&self, index: usize) -> Option<&str> {
+    pub fn get_string(&self, index: usize) -> Option<String> {
         match self.l.get(index) {
             Some(str) => {
-                match str.as_any().downcast_ref::<BencodeBytes>().unwrap().as_str() {
+                match str.as_any().downcast_ref::<BencodeBytes>().unwrap() {
                     Ok(str) => Some(str),
                     Err(_) => None
                 }
