@@ -91,7 +91,7 @@ impl BencodeObject {
         let key = BencodeBytes::from(key);
         match self.m.get(&key) {
             Some(str) => {
-                match str.as_any().downcast_ref::<BencodeBytes>().unwrap() {
+                match str.as_any().downcast_ref::<BencodeBytes>().unwrap().to_string() {
                     Ok(str) => Some(str),
                     Err(_) => None
                 }
