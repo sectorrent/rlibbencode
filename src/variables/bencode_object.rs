@@ -90,12 +90,7 @@ impl BencodeObject {
     pub fn get_string(&self, key: &str) -> Option<String> {
         let key = BencodeBytes::from(key);
         match self.m.get(&key) {
-            Some(str) => {
-                match str.as_any().downcast_ref::<BencodeBytes>().unwrap().to_string() {
-                    Ok(str) => Some(str),
-                    Err(_) => None
-                }
-            }
+            Some(str) => Some(str.as_any().downcast_ref::<BencodeBytes>().unwrap().to_string()),
             None => None
         }
     }
