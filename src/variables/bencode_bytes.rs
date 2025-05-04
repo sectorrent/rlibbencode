@@ -89,6 +89,10 @@ impl BencodeVariable for BencodeBytes {
     fn as_any(&self) -> &dyn Any {
         self
     }
+
+    fn as_any_mut(&mut self) -> &mut dyn Any {
+        self
+    }
 }
 
 impl From<Vec<u8>> for BencodeBytes {

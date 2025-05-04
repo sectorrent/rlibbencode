@@ -22,11 +22,13 @@ macro_rules! bencode {
 #[cfg(test)]
 mod tests {
 
-    use crate::variables::bencode_object::BencodeObject;
-    use crate::variables::bencode_array::BencodeArray;
+    use crate::variables::bencode_object::{BencodeObject, GetObject};
+    use crate::variables::bencode_array::{BencodeArray, GetArray};
     use crate::variables::inter::bencode_wrapper::ToBencode;
     use crate::variables::bencode_object::PutObject;
     use crate::variables::bencode_array::AddArray;
+    use crate::variables::bencode_bytes::BencodeBytes;
+    use crate::variables::inter::bencode_variable::BencodeVariable;
 
     #[test]
     fn main() {
@@ -37,14 +39,23 @@ mod tests {
         println!("{:?}", String::from_utf8(x.to_bencode()).unwrap());
 
 
-        let x = bencode!([
+        let mut x = bencode!([
             "name",
             "t",
             bencode!({
                 "x": "V",
                 "awd": 213
-            })
+            }),
+            bencode!([
+                "adiawhd",
+                1238
+            ])
         ]);
+
+        x.get_mut::<BencodeObject>(2).unwrap().put("no", "ajwdiajwhjdoaiwd");
+
+        println!("{:?}", x.get::<BencodeObject>(2).unwrap().get_cast::<String>("x").unwrap());
+        println!("{:?}", x.get_cast::<String>(1).unwrap());
 
         println!("{:?}", String::from_utf8(x.to_bencode()).unwrap());
 

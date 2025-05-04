@@ -64,7 +64,7 @@ pub trait AddArray<V> {
 
 pub trait GetArray<T> {
 
-    fn get<V: BencodeCast<T>>(&self, index: usize) -> Option<V>;
+    fn get_cast<V: BencodeCast<T>>(&self, index: usize) -> Option<V>;
 }
 
 pub struct BencodeArray {
@@ -78,6 +78,20 @@ impl BencodeArray {
             value: Vec::new()
         }
     }
+
+    pub fn get<V: BencodeVariable + 'static>(&self, index: usize) -> Option<&V> {
+        self.value
+            .get(index)?
+            .as_any()
+            .downcast_ref::<V>()
+    }
+
+    pub fn get_mut<V: BencodeVariable + 'static>(&mut self, index: usize) -> Option<&mut V> {
+        self.value
+            .get_mut(index)?
+            .as_any_mut()
+            .downcast_mut::<V>()
+    }
 }
 
 impl BencodeVariable for BencodeArray {
@@ -87,6 +101,10 @@ impl BencodeVariable for BencodeArray {
     }
 
     fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn as_any_mut(&mut self) -> &mut dyn Any {
         self
     }
 }
@@ -192,20 +210,21 @@ impl AddArray<BencodeObject> for BencodeArray {
         self.value.insert(index, Box::new(value));
     }
 }
-/*
-impl GetArray<BencodeObject> for BencodeArray {
 
-    fn get<V: BencodeCast<BencodeObject>>(&self, index: usize) -> Option<V> {
-        let x = self.value
-            .get(index)?
-            .as_any()
-            .downcast_ref::<V>()?;
+impl AddArray<BencodeArray> for BencodeArray {
+
+    fn push(&mut self, value: BencodeArray) {
+        self.value.push(Box::new(value));
+    }
+
+    fn insert(&mut self, index: usize, value: BencodeArray) {
+        self.value.insert(index, Box::new(value));
     }
 }
-*/
+
 impl GetArray<BencodeNumber> for BencodeArray {
 
-    fn get<V: BencodeCast<BencodeNumber>>(&self, index: usize) -> Option<V> {
+    fn get_cast<V: BencodeCast<BencodeNumber>>(&self, index: usize) -> Option<V> {
         self.value
             .get(index)?
             .as_any()
@@ -215,12 +234,11 @@ impl GetArray<BencodeNumber> for BencodeArray {
 
 impl GetArray<BencodeBytes> for BencodeArray {
 
-    fn get<V: BencodeCast<BencodeBytes>>(&self, index: usize) -> Option<V> {
+    fn get_cast<V: BencodeCast<BencodeBytes>>(&self, index: usize) -> Option<V> {
         self.value
             .get(index)?
             .as_any()
             .downcast_ref::<BencodeBytes>()?.parse::<V>().ok()
     }
 }
-
 

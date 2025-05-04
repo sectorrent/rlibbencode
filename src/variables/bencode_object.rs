@@ -107,7 +107,7 @@ pub trait PutObject<K, V> {
 
 pub trait GetObject<K, T> {
 
-    fn get<V: BencodeCast<T>>(&self, key: K) -> Option<V>;
+    fn get_cast<V: BencodeCast<T>>(&self, key: K) -> Option<V>;
 }
 
 //#[derive(Clone)]
@@ -132,6 +132,10 @@ impl BencodeVariable for BencodeObject {
     }
 
     fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn as_any_mut(&mut self) -> &mut dyn Any {
         self
     }
 }
@@ -328,7 +332,7 @@ macro_rules! impl_bencode_get_object {
         $(
             impl GetObject<$key, $value> for BencodeObject {
 
-                fn get<V: BencodeCast<$value>>(&self, key: $key) -> Option<V> {
+                fn get_cast<V: BencodeCast<$value>>(&self, key: $key) -> Option<V> {
                     self.value
                         .get(&BencodeBytes::from(key))?
                         .as_any()
@@ -353,14 +357,3 @@ impl_bencode_get_object!(
     (&Vec<u8>, BencodeNumber),
     (&Vec<u8>, BencodeBytes)
 );
-
-
-
-
-
-
-
-
-
-
-
