@@ -1,44 +1,110 @@
 use std::any::Any;
 use std::io;
-use std::str::from_utf8;
+use crate::variables::inter::bencode_variable::{BencodeCast, BencodeVariable};
+use crate::variables::inter::bencode_wrapper::{FromBencode, ToBencode};
 
-use crate::variables::inter::bencode_variable::BencodeVariable;
-use crate::variables::inter::bencode_types::BencodeTypes;
+impl ToBencode for String {
 
-#[derive(Debug, Eq, Hash, PartialEq, Clone)]
-pub struct BencodeBytes {
-    b: Vec<u8>,
-    s: usize
-}
-
-impl BencodeBytes {
-
-    pub fn as_bytes(&self) -> &[u8] {
-        &self.b
-    }
-
-    pub fn as_str(&self) -> io::Result<&str> {
-        from_utf8(&self.b).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))
+    fn to_bencode(&self) -> Vec<u8> {
+        let mut encoded = Vec::new();
+        encoded.extend_from_slice(self.len().to_string().as_bytes());
+        encoded.push(b':');
+        encoded.extend_from_slice(self.as_bytes());
+        encoded
     }
 }
 
-impl<const N: usize> From<[u8; N]> for BencodeBytes {
+impl FromBencode for String {
 
-    fn from(value: [u8; N]) -> Self {
-        Self {
-            b: value.to_vec(),
-            s: value.len()+value.len().to_string().len()+1
+    fn from_bencode(buf: &[u8]) -> io::Result<(Self, usize)> {
+        if !(buf[0] >= b'0' && buf[0] <= b'9') {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, "Invalid prefix for bytes"));
         }
+
+        let mut off = 0;
+        while buf[off] != b':' {
+            off += 1;
+        }
+
+        let length = buf.iter().take(off).fold(0, |acc, &b| acc * 10 + (b - b'0') as usize);
+        Ok((String::from_utf8(buf[off + 1..off + 1 + length].to_vec())
+                .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?, length + off + 1))
+    }
+}
+
+impl ToBencode for &str {
+
+    fn to_bencode(&self) -> Vec<u8> {
+        let mut buf = Vec::new();
+        buf.extend_from_slice(self.len().to_string().as_bytes());
+        buf.push(b':');
+        buf.extend_from_slice(self.as_bytes());
+        buf
+    }
+}
+
+impl ToBencode for &[u8] {
+
+    fn to_bencode(&self) -> Vec<u8> {
+        let mut buf = Vec::new();
+        buf.extend_from_slice(self.len().to_string().as_bytes());
+        buf.push(b':');
+        buf.extend_from_slice(self);
+        buf
+    }
+}
+/*
+impl FromBencode for Vec<u8> {
+
+    fn from_bencode(buf: &[u8]) -> io::Result<(Self, usize)> {
+        if !(buf[0] >= b'0' && buf[0] <= b'9') {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, "Invalid prefix for bytes"));
+        }
+
+        let mut off = 0;
+        while buf[off] != b':' {
+            off += 1;
+        }
+
+        let length = buf.iter().take(off).fold(0, |acc, &b| acc * 10 + (b - b'0') as usize);
+        Ok((buf[off + 1..off + 1 + length].to_vec(), length + off + 1))
+    }
+}
+*/
+
+
+
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+pub struct BencodeBytes {
+    value: Vec<u8>
+}
+
+impl BencodeVariable for BencodeBytes {
+
+    fn upcast(self) -> Box<dyn BencodeVariable> {
+        Box::new(self)
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
     }
 }
 
 impl From<Vec<u8>> for BencodeBytes {
 
     fn from(value: Vec<u8>) -> Self {
-        let l = value.len();
         Self {
-            b: value,
-            s: l+l.to_string().len()+1
+            value
+        }
+    }
+}
+
+impl From<&Vec<u8>> for BencodeBytes {
+
+    fn from(value: &Vec<u8>) -> Self {
+        Self {
+            value: value.clone()
         }
     }
 }
@@ -47,8 +113,7 @@ impl From<&str> for BencodeBytes {
 
     fn from(value: &str) -> Self {
         Self {
-            b: value.as_bytes().to_vec(),
-            s: value.len()+value.len().to_string().len()+1
+            value: value.as_bytes().to_vec()
         }
     }
 }
@@ -56,83 +121,79 @@ impl From<&str> for BencodeBytes {
 impl From<String> for BencodeBytes {
 
     fn from(value: String) -> Self {
-        let value = value.into_bytes();
-        let s = value.len()+value.len().to_string().len()+1;
         Self {
-            b: value,//from_raw_parts(bytes, len),
-            s
+            value: value.as_bytes().to_vec()
         }
-        /*
-        let bytes = value.as_ptr();
-        let len = value.len();
-        forget(value);
-
-        unsafe {
-            let value = from_raw_parts(bytes, len);
-
-            Self {
-                b: value,//from_raw_parts(bytes, len),
-                s: value.len()+value.len().to_string().len()+1
-            }
-        }*/
     }
 }
 
-impl BencodeVariable for BencodeBytes {
+impl From<&String> for BencodeBytes {
 
-    fn get_type(&self) -> BencodeTypes {
-        BencodeTypes::Bytes
+    fn from(value: &String) -> Self {
+        Self {
+            value: value.as_bytes().to_vec()
+        }
     }
+}
 
-    fn encode(&self) -> Vec<u8> {
-        let mut r: Vec<u8> = Vec::with_capacity(self.s);
+impl<const N: usize> From<[u8; N]> for BencodeBytes {
 
-        r.extend_from_slice(self.b.len().to_string().as_bytes());
-        r.push(BencodeTypes::Bytes.delimiter());
-        r.extend_from_slice(&self.b);
-        r
+    fn from(value: [u8; N]) -> Self {
+        Self {
+            value: value.to_vec()
+        }
     }
+}
 
-    fn decode_with_offset(buf: &[u8], off: usize) -> io::Result<Self> where Self: Sized {
-        let type_ = BencodeTypes::type_by_prefix(buf[off])?;
-        if type_ != BencodeTypes::Bytes {
-            return Err(io::Error::new(io::ErrorKind::InvalidData, "Byte array is not a bencode bytes / string."));
+impl From<&[u8]> for BencodeBytes {
+
+    fn from(value: &[u8]) -> Self {
+        Self {
+            value: value.to_vec()
+        }
+    }
+}
+
+impl BencodeCast<BencodeBytes> for Vec<u8> {
+
+    fn cast(value: &BencodeBytes) -> io::Result<Self> {
+        Ok(value.value.clone())
+    }
+}
+
+impl BencodeCast<BencodeBytes> for String {
+
+    fn cast(value: &BencodeBytes) -> io::Result<Self> {
+        Ok(String::from_utf8(value.value.clone()).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?)
+    }
+}
+
+impl FromBencode for BencodeBytes {
+
+    fn from_bencode(buf: &[u8]) -> io::Result<(Self, usize)> {
+        if !(buf[0] >= b'0' && buf[0] <= b'9') {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, "Invalid prefix for bytes"));
         }
 
-        let mut off = off;
-        let mut len_bytes = [0u8; 8];
-        let mut s = off;
-
-        while buf[off] != BencodeTypes::Bytes.delimiter() {
-            len_bytes[off - s] = buf[off];
+        let mut off = 0;
+        while buf[off] != b':' {
             off += 1;
         }
 
-        let length = len_bytes.iter().take(off - s).fold(0, |acc, &b| acc * 10 + (b - b'0') as usize);
-        let bytes = buf[off + 1..off + 1 + length].to_vec();
-
-        off += 1+length;
-        s = off-s;
-
-        Ok(Self {
-            b: bytes,
-            s
-        })
+        let length = buf.iter().take(off).fold(0, |acc, &b| acc * 10 + (b - b'0') as usize);
+        Ok((Self {
+            value: buf[off + 1..off + 1 + length].to_vec()
+        }, length + off + 1))
     }
+}
 
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
+impl ToBencode for BencodeBytes {
 
-    fn as_any_mut(&mut self) -> &mut dyn Any {
-        self
-    }
-
-    fn byte_size(&self) -> usize {
-        self.s
-    }
-
-    fn to_string(&self) -> String {
-        String::from_utf8_lossy(&self.b).to_string()
+    fn to_bencode(&self) -> Vec<u8> {
+        let mut buf = Vec::new();
+        buf.extend_from_slice(self.value.len().to_string().as_bytes());
+        buf.push(b':');
+        buf.extend_from_slice(&self.value);
+        buf
     }
 }

@@ -1,24 +1,23 @@
 use std::any::Any;
 use std::io;
-use crate::variables::inter::bencode_types::BencodeTypes;
+use crate::variables::inter::bencode_wrapper::{FromBencode, ToBencode};
 
-pub trait BencodeVariable {
+pub trait BencodeVariable: ToBencode + FromBencode {
 
-    fn get_type(&self) -> BencodeTypes;
-
-    fn encode(&self) -> Vec<u8>;
-
-    fn decode(buf: &[u8]) -> io::Result<Self> where Self: Sized {
-        Self::decode_with_offset(buf, 0)
+    fn parse<V>(&self) -> io::Result<V>
+    where
+        V: BencodeCast<Self>,
+        Self: Sized,
+    {
+        V::cast(self)
     }
 
-    fn decode_with_offset(buf: &[u8], off: usize) -> io::Result<Self> where Self: Sized;//Self where Self: Sized;
+    fn upcast(self) -> Box<dyn BencodeVariable>;
 
     fn as_any(&self) -> &dyn Any;
+}
 
-    fn as_any_mut(&mut self) -> &mut dyn Any;
+pub trait BencodeCast<T>: Sized {
 
-    fn byte_size(&self) -> usize;
-
-    fn to_string(&self) -> String;
+    fn cast(value: &T) -> io::Result<Self>;
 }

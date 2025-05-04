@@ -1,15 +1,50 @@
 pub mod variables;
-pub mod utils;
+
+#[macro_export]
+macro_rules! bencode {
+    ({ $($key:tt : $value:expr),* $(,)? }) => {{
+        let mut ben = BencodeObject::new();
+        $(
+            ben.put($key, $value);
+        )*
+        ben
+    }};
+
+    ([ $($elem:expr),* $(,)? ]) => {{
+        let mut ben = BencodeArray::new();
+        $(
+            ben.push($elem);
+        )*
+        ben
+    }};
+}
 
 #[cfg(test)]
 mod tests {
 
-    use crate::variables::bencode_array::{AddArray, BencodeArray};
-    use crate::variables::bencode_object::{BencodeObject, PutObject};
-    use crate::variables::inter::bencode_variable::BencodeVariable;
+    use crate::variables::bencode_object::BencodeObject;
+    use crate::variables::bencode_array::BencodeArray;
+    use crate::variables::inter::bencode_wrapper::ToBencode;
+    use crate::variables::bencode_object::PutObject;
+    use crate::variables::bencode_array::AddArray;
 
     #[test]
     fn main() {
+        let x = bencode!({
+            "name": "Edward",
+            "t": "TEST"
+        });
+        println!("{:?}", String::from_utf8(x.to_bencode()).unwrap());
+
+
+        let x = bencode!([
+            "name",
+            "t"
+        ]);
+        println!("{:?}", String::from_utf8(x.to_bencode()).unwrap());
+
+
+        /*
         let mut obj = BencodeObject::new();
         obj.put("b", "bar");
         obj.put("c", "far");
@@ -38,6 +73,7 @@ mod tests {
 
         let decoded = BencodeObject::decode(&encoded).unwrap();
         println!("{}", decoded.to_string());
+        */
     }
 
     /*
