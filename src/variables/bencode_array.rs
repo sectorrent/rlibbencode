@@ -127,7 +127,7 @@ impl FromBencode for BencodeArray {
                     let (obj, length) = BencodeNumber::from_bencode(&buf[off..])?;
                     (obj.upcast(), length)
                 }
-                b @ b'0'..=b'9' => {
+                _b @ b'0'..=b'9' => {
                     let (obj, length) = BencodeBytes::from_bencode(&buf[off..])?;
                     (obj.upcast(), length)
                 }
@@ -182,6 +182,27 @@ impl_bencode_add_array!(
     (BencodeBytes, Vec<u8>)
 );
 
+impl AddArray<BencodeObject> for BencodeArray {
+
+    fn push(&mut self, value: BencodeObject) {
+        self.value.push(Box::new(value));
+    }
+
+    fn insert(&mut self, index: usize, value: BencodeObject) {
+        self.value.insert(index, Box::new(value));
+    }
+}
+/*
+impl GetArray<BencodeObject> for BencodeArray {
+
+    fn get<V: BencodeCast<BencodeObject>>(&self, index: usize) -> Option<V> {
+        let x = self.value
+            .get(index)?
+            .as_any()
+            .downcast_ref::<V>()?;
+    }
+}
+*/
 impl GetArray<BencodeNumber> for BencodeArray {
 
     fn get<V: BencodeCast<BencodeNumber>>(&self, index: usize) -> Option<V> {

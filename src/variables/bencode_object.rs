@@ -176,7 +176,7 @@ impl FromBencode for BencodeObject {
                     let (obj, length) = BencodeNumber::from_bencode(&buf[off..])?;
                     (obj.upcast(), length)
                 }
-                b @ b'0'..=b'9' => {
+                _b @ b'0'..=b'9' => {
                     let (obj, length) = BencodeBytes::from_bencode(&buf[off..])?;
                     (obj.upcast(), length)
                 }

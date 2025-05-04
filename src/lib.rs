@@ -39,10 +39,19 @@ mod tests {
 
         let x = bencode!([
             "name",
-            "t"
+            "t",
+            bencode!({
+                "x": "V",
+                "awd": 213
+            })
         ]);
+
         println!("{:?}", String::from_utf8(x.to_bencode()).unwrap());
 
+        //println!("{}", x.get::<BencodeObject>(2).unwrap().get::<String>("x").unwrap());
+
+        //SOMEHOW OBTAIN OBJECTS AND ARRAYS
+        //FIX Vec<u8> for being bytes only...
 
         /*
         let mut obj = BencodeObject::new();
