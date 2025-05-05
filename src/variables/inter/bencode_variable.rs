@@ -1,6 +1,5 @@
 use std::any::Any;
 use std::io;
-use crate::variables::inter::bencode_wrapper::{FromBencode, ToBencode};
 
 pub trait BencodeVariable: ToBencode + FromBencode {
 
@@ -22,4 +21,14 @@ pub trait BencodeVariable: ToBencode + FromBencode {
 pub trait BencodeCast<T>: Sized {
 
     fn cast(value: &T) -> io::Result<Self>;
+}
+
+pub trait ToBencode {
+
+    fn to_bencode(&self) -> Vec<u8>;
+}
+
+pub trait FromBencode {
+
+    fn from_bencode(buf: &[u8]) -> io::Result<(Self, usize)> where Self: Sized;
 }

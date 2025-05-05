@@ -1,7 +1,6 @@
 use std::any::Any;
 use std::io;
-use crate::variables::inter::bencode_variable::{BencodeCast, BencodeVariable};
-use crate::variables::inter::bencode_wrapper::{FromBencode, ToBencode};
+use crate::variables::inter::bencode_variable::{BencodeCast, BencodeVariable, FromBencode, ToBencode};
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct BencodeBytes {
@@ -163,6 +162,17 @@ impl BencodeCast<BencodeBytes> for String {
     }
 }
 
+impl ToBencode for BencodeBytes {
+
+    fn to_bencode(&self) -> Vec<u8> {
+        let mut buf = Vec::new();
+        buf.extend_from_slice(self.value.len().to_string().as_bytes());
+        buf.push(b':');
+        buf.extend_from_slice(&self.value);
+        buf
+    }
+}
+
 impl FromBencode for BencodeBytes {
 
     fn from_bencode(buf: &[u8]) -> io::Result<(Self, usize)> {
@@ -179,16 +189,5 @@ impl FromBencode for BencodeBytes {
         Ok((Self {
             value: buf[off + 1..off + 1 + length].to_vec()
         }, length + off + 1))
-    }
-}
-
-impl ToBencode for BencodeBytes {
-
-    fn to_bencode(&self) -> Vec<u8> {
-        let mut buf = Vec::new();
-        buf.extend_from_slice(self.value.len().to_string().as_bytes());
-        buf.push(b':');
-        buf.extend_from_slice(&self.value);
-        buf
     }
 }

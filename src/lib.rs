@@ -30,11 +30,10 @@ mod tests {
 
     use crate::variables::bencode_object::{BencodeObject, ObjectOptions};
     use crate::variables::bencode_array::BencodeArray;
-    use crate::variables::inter::bencode_wrapper::ToBencode;
     use crate::variables::bencode_object::PutObject;
     use crate::variables::bencode_array::AddArray;
     use crate::variables::bencode_bytes::BencodeBytes;
-    use crate::variables::inter::bencode_variable::BencodeVariable;
+    use crate::variables::inter::bencode_variable::{BencodeVariable, ToBencode};
 
     #[test]
     fn main() {

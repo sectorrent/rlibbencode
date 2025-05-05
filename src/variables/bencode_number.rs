@@ -1,7 +1,6 @@
 use std::any::Any;
 use std::io;
-use crate::variables::inter::bencode_variable::{BencodeCast, BencodeVariable};
-use crate::variables::inter::bencode_wrapper::{FromBencode, ToBencode};
+use crate::variables::inter::bencode_variable::{BencodeCast, BencodeVariable, FromBencode, ToBencode};
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct BencodeNumber {

@@ -4,8 +4,7 @@ use crate::utils::ordered_map::OrderedMap;
 use crate::variables::bencode_array::BencodeArray;
 use crate::variables::bencode_bytes::BencodeBytes;
 use crate::variables::bencode_number::BencodeNumber;
-use crate::variables::inter::bencode_variable::{BencodeCast, BencodeVariable};
-use crate::variables::inter::bencode_wrapper::{FromBencode, ToBencode};
+use crate::variables::inter::bencode_variable::{BencodeCast, BencodeVariable, FromBencode, ToBencode};
 
 pub trait PutObject<K, V> {
 
