@@ -1,5 +1,6 @@
 use std::any::Any;
-use std::io;
+use std::{fmt, io};
+use std::fmt::Formatter;
 use crate::utils::ordered_map::OrderedMap;
 use crate::variables::bencode_array::BencodeArray;
 use crate::variables::bencode_bytes::BencodeBytes;
@@ -30,7 +31,7 @@ pub trait GetObject<K> {
     fn get_mut<V: BencodeVariable + 'static>(&mut self, key: K) -> Option<&mut V>;
 }
 
-//#[derive(Clone)]
+#[derive(Debug)]
 pub struct BencodeObject {
     value: OrderedMap<BencodeBytes, Box<dyn BencodeVariable>>
 }
@@ -363,3 +364,35 @@ impl_bencode_put_object!(
     (&Vec<u8>, BencodeNumber),
     (&Vec<u8>, BencodeBytes)
 );
+
+impl fmt::Display for BencodeObject {
+
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        writeln!(f, "{{")?;
+
+        for (key, val) in self.value.iter() {
+            let key_str = format!("{}", key);
+            let val_str = format!("{}", val);
+
+            let colored = format!("\t\u{001b}[0;31m{key_str}\u{001b}[0m: \u{001b}[0;33m{val_str}\u{001b}[0m");
+            //let indented = val_str.replace("\r\n", "\r\n\t");
+            //format!("\t\u{001b}[0;32m{key_str}\u{001b}[0m: {indented}")
+
+            /*
+            let colored = match val.get_type() {
+                BencodeType::NUMBER => format!("\t\u{001b}[0;31m{key_str}\u{001b}[0m: \u{001b}[0;33m{val_str}\u{001b}[0m"),
+                BencodeType::BYTES  => format!("\t\u{001b}[0;31m{key_str}\u{001b}[0m: \u{001b}[0;34m{val_str}\u{001b}[0m"),
+                BencodeType::ARRAY | BencodeType::OBJECT => {
+                    let indented = val_str.replace("\r\n", "\r\n\t");
+                    format!("\t\u{001b}[0;32m{key_str}\u{001b}[0m: {indented}")
+                },
+            };
+            */
+
+            writeln!(f, "{colored}\r")?;
+        }
+
+        write!(f, "}}")
+        //write!(f, "{}", String::from_utf8(self.value.clone()).unwrap())
+    }
+}

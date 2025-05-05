@@ -60,6 +60,7 @@ mod tests {
         println!("{:?}", z.as_any().downcast_ref::<BencodeBytes>().unwrap().parse::<String>());
 
         println!("{:?}", String::from_utf8(x.to_bencode()).unwrap());
+        println!("{}", x);
 
         /*
         let mut x = bencode!([

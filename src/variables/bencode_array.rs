@@ -1,5 +1,6 @@
 use std::any::Any;
-use std::io;
+use std::{fmt, io};
+use std::fmt::Formatter;
 use crate::variables::bencode_bytes::BencodeBytes;
 use crate::variables::bencode_number::BencodeNumber;
 use crate::variables::bencode_object::BencodeObject;
@@ -17,6 +18,7 @@ pub trait GetArrayCast<T> {
     fn get_cast<V: BencodeCast<T>>(&self, index: usize) -> Option<V>;
 }
 
+#[derive(Debug)]
 pub struct BencodeArray {
     value: Vec<Box<dyn BencodeVariable>>
 }
@@ -211,5 +213,12 @@ impl GetArrayCast<BencodeBytes> for BencodeArray {
             .get(index)?
             .as_any()
             .downcast_ref::<BencodeBytes>()?.parse::<V>().ok()
+    }
+}
+
+impl fmt::Display for BencodeArray {
+
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", "")
     }
 }

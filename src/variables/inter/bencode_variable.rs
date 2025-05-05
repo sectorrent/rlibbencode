@@ -1,7 +1,8 @@
 use std::any::Any;
+use std::fmt::{Debug, Display};
 use std::io;
 
-pub trait BencodeVariable: ToBencode + FromBencode {
+pub trait BencodeVariable: Display + Debug + ToBencode + FromBencode {
 
     fn parse<V>(&self) -> io::Result<V>
     where

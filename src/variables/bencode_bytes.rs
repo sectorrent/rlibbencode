@@ -1,5 +1,6 @@
 use std::any::Any;
-use std::io;
+use std::{fmt, io};
+use std::fmt::Formatter;
 use crate::variables::inter::bencode_variable::{BencodeCast, BencodeVariable, FromBencode, ToBencode};
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
@@ -190,5 +191,12 @@ impl FromBencode for BencodeBytes {
         Ok((Self {
             value: buf[off + 1..off + 1 + length].to_vec()
         }, length + off + 1))
+    }
+}
+
+impl fmt::Display for BencodeBytes {
+
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", String::from_utf8(self.value.clone()).unwrap())
     }
 }
