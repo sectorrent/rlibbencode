@@ -95,6 +95,8 @@ impl FromBencode for BencodeObject {
             });
         }
 
+        *offset += 1;
+
         Ok(Self {
             value
         })

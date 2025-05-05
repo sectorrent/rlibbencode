@@ -95,6 +95,8 @@ impl FromBencode for BencodeArray {
             });
         }
 
+        *offset += 1;
+
         Ok(Self {
             value
         })

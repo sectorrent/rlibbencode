@@ -37,7 +37,7 @@ mod tests {
     use crate::variables::bencode_object::PutObject;
     use crate::variables::bencode_array::AddArray;
     use crate::variables::bencode_bytes::BencodeBytes;
-    use crate::variables::inter::bencode_variable::{BencodeVariable, ToBencode};
+    use crate::variables::inter::bencode_variable::{BencodeVariable, FromBencode, ToBencode};
 
     #[test]
     fn main() {
@@ -59,6 +59,11 @@ mod tests {
         println!("{:?}", z.as_any().downcast_ref::<BencodeBytes>().unwrap().parse::<String>());
 
         println!("{:?}", String::from_utf8(x.to_bencode()).unwrap());
+
+
+        let d: Vec<u8>  = vec![109, 49, 58, 118, 53, 58, 48, 46, 49, 46, 48, 49, 58, 116, 54, 58, 99, 114, 101, 97, 116, 101, 49, 58, 113, 109, 54, 58, 114, 101, 99, 111, 114, 100, 49, 58, 97, 53, 58, 99, 108, 97, 115, 115, 50, 58, 105, 110, 54, 58, 100, 111, 109, 97, 105, 110, 49, 56, 58, 117, 110, 99, 101, 110, 116, 114, 97, 108, 105, 122, 101, 100, 46, 117, 110, 101, 116, 55, 58, 97, 100, 100, 114, 101, 115, 115, 105, 50, 49, 51, 48, 55, 48, 54, 52, 51, 51, 101, 51, 58, 116, 116, 108, 105, 51, 48, 48, 101, 49, 49, 58, 99, 97, 99, 104, 101, 95, 102, 108, 117, 115, 104, 105, 49, 101, 53, 58, 108, 111, 99, 97, 108, 105, 49, 101, 101, 101];
+        let z = BencodeObject::from_bencode(&d).unwrap();
+        println!("{:?}", z.to_bencode());
 
         /*
         let mut x = bencode!([
