@@ -170,8 +170,21 @@ impl_bencode_add_array!(
 
     (BencodeBytes, String),
     (BencodeBytes, &str),
-    (BencodeBytes, Vec<u8>)
+    (BencodeBytes, Vec<u8>),
+    (BencodeBytes, &Vec<u8>),
+    (BencodeBytes, &[u8])
 );
+
+impl<const N: usize> AddArray<[u8; N]> for BencodeArray {
+
+    fn push(&mut self, value: [u8; N]) {
+        self.value.push(Box::new(BencodeBytes::from(value)));
+    }
+
+    fn insert(&mut self, index: usize, value: [u8; N]) {
+        self.value.insert(index, Box::new(BencodeBytes::from(value)));
+    }
+}
 
 impl AddArray<BencodeObject> for BencodeArray {
 
