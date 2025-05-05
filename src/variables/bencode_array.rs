@@ -5,7 +5,7 @@ use crate::variables::bencode_bytes::BencodeBytes;
 use crate::variables::bencode_number::BencodeNumber;
 use crate::variables::bencode_object::BencodeObject;
 use crate::variables::inter::bencode_types::BencodeTypes;
-use crate::variables::inter::bencode_variable::{BencodeCast, BencodeVariable, FromBencode, ToBencode};
+use crate::variables::inter::bencode_variable::{BencodeVariable, FromBencode, ToBencode};
 
 pub trait AddArray<V> {
 
