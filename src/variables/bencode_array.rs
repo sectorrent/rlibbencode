@@ -192,4 +192,3 @@ impl GetArrayCast<BencodeBytes> for BencodeArray {
             .downcast_ref::<BencodeBytes>()?.parse::<V>().ok()
     }
 }
-
