@@ -105,9 +105,16 @@ pub trait PutObject<K, V> {
     fn put(&mut self, key: K, value: V);
 }
 
-pub trait GetObject<K, T> {
+pub trait GetObjectCast<K, T> {
 
     fn get_cast<V: BencodeCast<T>>(&self, key: K) -> Option<V>;
+}
+
+pub trait GetObject<K> {
+
+    fn get<V: BencodeVariable + 'static>(&self, key: K) -> Option<&V>;
+
+    fn get_mut<V: BencodeVariable + 'static>(&mut self, key: K) -> Option<&mut V>;
 }
 
 //#[derive(Clone)]
@@ -197,7 +204,7 @@ impl FromBencode for BencodeObject {
     }
 }
 
-macro_rules! impl_bencode_put_object {
+macro_rules! impl_bencode_put_object_primitive {
     ($(($key:ty, $_type:ty, $value:ty)),*) => {
         $(
             impl PutObject<$key, $value> for BencodeObject {
@@ -210,7 +217,7 @@ macro_rules! impl_bencode_put_object {
     };
 }
 
-impl_bencode_put_object!(
+impl_bencode_put_object_primitive!(
     (String, BencodeNumber, u8),
     (String, BencodeNumber, u16),
     (String, BencodeNumber, u32),
@@ -327,10 +334,10 @@ impl_bencode_put_object!(
 );
 
 
-macro_rules! impl_bencode_get_object {
+macro_rules! impl_bencode_get_object_cast {
     ($(($key:ty, $value:ty)),*) => {
         $(
-            impl GetObject<$key, $value> for BencodeObject {
+            impl GetObjectCast<$key, $value> for BencodeObject {
 
                 fn get_cast<V: BencodeCast<$value>>(&self, key: $key) -> Option<V> {
                     self.value
@@ -343,7 +350,7 @@ macro_rules! impl_bencode_get_object {
     };
 }
 
-impl_bencode_get_object!(
+impl_bencode_get_object_cast!(
     (String, BencodeNumber),
     (String, BencodeBytes),
     (&String, BencodeNumber),
@@ -357,3 +364,69 @@ impl_bencode_get_object!(
     (&Vec<u8>, BencodeNumber),
     (&Vec<u8>, BencodeBytes)
 );
+
+
+macro_rules! impl_bencode_get_object {
+    ($($type:ty)*) => {
+        $(
+            impl GetObject<$type> for BencodeObject {
+
+                fn get<V: BencodeVariable + 'static>(&self, key: $type) -> Option<&V> {
+                    self.value
+                        .get(&BencodeBytes::from(key))?
+                        .as_any()
+                        .downcast_ref::<V>()
+                }
+
+                fn get_mut<V: BencodeVariable + 'static>(&mut self, key: $type) -> Option<&mut V> {
+                    self.value
+                        .get_mut(&BencodeBytes::from(key))?
+                        .as_any_mut()
+                        .downcast_mut::<V>()
+                }
+            }
+        )*
+    };
+}
+
+impl_bencode_get_object!(String &String &str &[u8] Vec<u8> &Vec<u8>);
+
+
+
+macro_rules! impl_bencode_put_object {
+    ($(($key:ty, $value:ty)),*) => {
+        $(
+            impl PutObject<$key, $value> for BencodeObject {
+
+                fn put(&mut self, key: $key, value: $value) {
+                    self.value.insert(BencodeBytes::from(key), Box::new(value));
+                }
+            }
+        )*
+    };
+}
+
+impl_bencode_put_object!(
+    (String, BencodeArray),
+    (String, BencodeObject),
+    (&String, BencodeArray),
+    (&String, BencodeObject),
+    (&str, BencodeArray),
+    (&str, BencodeObject),
+    (&[u8], BencodeArray),
+    (&[u8], BencodeObject),
+    (Vec<u8>, BencodeArray),
+    (Vec<u8>, BencodeObject),
+    (&Vec<u8>, BencodeArray),
+    (&Vec<u8>, BencodeObject)
+);
+
+
+
+
+
+
+
+
+
+

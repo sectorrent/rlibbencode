@@ -62,7 +62,7 @@ pub trait AddArray<V> {
     fn insert(&mut self, index: usize, value: V);
 }
 
-pub trait GetArray<T> {
+pub trait GetArrayCast<T> {
 
     fn get_cast<V: BencodeCast<T>>(&self, index: usize) -> Option<V>;
 }
@@ -222,7 +222,7 @@ impl AddArray<BencodeArray> for BencodeArray {
     }
 }
 
-impl GetArray<BencodeNumber> for BencodeArray {
+impl GetArrayCast<BencodeNumber> for BencodeArray {
 
     fn get_cast<V: BencodeCast<BencodeNumber>>(&self, index: usize) -> Option<V> {
         self.value
@@ -232,7 +232,7 @@ impl GetArray<BencodeNumber> for BencodeArray {
     }
 }
 
-impl GetArray<BencodeBytes> for BencodeArray {
+impl GetArrayCast<BencodeBytes> for BencodeArray {
 
     fn get_cast<V: BencodeCast<BencodeBytes>>(&self, index: usize) -> Option<V> {
         self.value
