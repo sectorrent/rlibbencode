@@ -224,7 +224,7 @@ impl GetArrayCast<BencodeBytes> for BencodeArray {
 impl fmt::Display for BencodeArray {
 
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{{\r\n")?;
+        write!(f, "[\r\n")?;
 
         for val in &self.value {
             let val_str = format!("{}", val);
@@ -239,6 +239,6 @@ impl fmt::Display for BencodeArray {
             })?;
         }
 
-        write!(f, "}}")
+        write!(f, "]")
     }
 }
