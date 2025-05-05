@@ -75,45 +75,29 @@ impl ToBencode for BencodeObject {
 
 impl FromBencode for BencodeObject {
 
-    fn from_bencode(buf: &[u8]) -> io::Result<(Self, usize)> {
+    fn from_bencode_with_offset(buf: &[u8], offset: &mut usize) -> io::Result<Self> {
         if buf[0] != b'm' {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "Invalid prefix for object"));
         }
 
         let mut value = OrderedMap::new();
 
-        let mut off = 1;
-        while buf[off] != b'e' {
-            let (k, length) = BencodeBytes::from_bencode(&buf[off..])?;
-            off += length;
+        *offset = 1;
+        while buf[*offset] != b'e' {
+            let k = BencodeBytes::from_bencode_with_offset(&buf[*offset..], offset)?;
 
-            let (v, length) = match buf[off] {
-                b'l' => {
-                    let (obj, length) = BencodeArray::from_bencode(&buf[off..])?;
-                    (obj.upcast(), length)
-                }
-                b'm' => {
-                    let (obj, length) = BencodeObject::from_bencode(&buf[off..])?;
-                    (obj.upcast(), length)
-                }
-                b'i' => {
-                    let (obj, length) = BencodeNumber::from_bencode(&buf[off..])?;
-                    (obj.upcast(), length)
-                }
-                _b @ b'0'..=b'9' => {
-                    let (obj, length) = BencodeBytes::from_bencode(&buf[off..])?;
-                    (obj.upcast(), length)
-                }
+            value.insert(k, match buf[*offset] {
+                b'l' => BencodeArray::from_bencode_with_offset(&buf[*offset..], offset)?.upcast(),
+                b'm' => BencodeObject::from_bencode_with_offset(&buf[*offset..], offset)?.upcast(),
+                b'i' => BencodeNumber::from_bencode_with_offset(&buf[*offset..], offset)?.upcast(),
+                _b @ b'0'..=b'9' => BencodeBytes::from_bencode_with_offset(&buf[*offset..], offset)?.upcast(),
                 _ => unimplemented!()
-            };
-            off += length;
-
-            value.insert(k, v);
+            });
         }
 
-        Ok((Self {
+        Ok(Self {
             value
-        }, 0))
+        })
     }
 }
 

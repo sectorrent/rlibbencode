@@ -68,7 +68,7 @@ impl ToBencode for BencodeNumber {
 
 impl FromBencode for BencodeNumber {
 
-    fn from_bencode(buf: &[u8]) -> io::Result<(Self, usize)> {
+    fn from_bencode_with_offset(buf: &[u8], offset: &mut usize) -> io::Result<Self> {
         if buf[0] != b'i' {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "Invalid prefix for number"));
         }
@@ -78,8 +78,10 @@ impl FromBencode for BencodeNumber {
             off += 1;
         }
 
-        Ok((Self {
+        *offset += off + 1;
+
+        Ok(Self {
             value: buf[1..off].to_vec()
-        }, off + 1))
+        })
     }
 }

@@ -175,7 +175,7 @@ impl ToBencode for BencodeBytes {
 
 impl FromBencode for BencodeBytes {
 
-    fn from_bencode(buf: &[u8]) -> io::Result<(Self, usize)> {
+    fn from_bencode_with_offset(buf: &[u8], offset: &mut usize) -> io::Result<Self> {
         if !(buf[0] >= b'0' && buf[0] <= b'9') {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "Invalid prefix for bytes"));
         }
@@ -186,8 +186,10 @@ impl FromBencode for BencodeBytes {
         }
 
         let length = buf.iter().take(off).fold(0, |acc, &b| acc * 10 + (b - b'0') as usize);
-        Ok((Self {
+        *offset += length + off + 1;
+
+        Ok(Self {
             value: buf[off + 1..off + 1 + length].to_vec()
-        }, length + off + 1))
+        })
     }
 }

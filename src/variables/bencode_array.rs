@@ -77,42 +77,27 @@ impl ToBencode for BencodeArray {
 
 impl FromBencode for BencodeArray {
 
-    fn from_bencode(buf: &[u8]) -> io::Result<(Self, usize)> {
+    fn from_bencode_with_offset(buf: &[u8], offset: &mut usize) -> io::Result<Self> {
         if buf[0] != b'l' {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "Invalid prefix for object"));
         }
 
         let mut value = Vec::new();
 
-        let mut off = 1;
-        while buf[off] != b'e' {
-            let (v, length) = match buf[off] {
-                b'l' => {
-                    let (obj, length) = BencodeArray::from_bencode(&buf[off..])?;
-                    (obj.upcast(), length)
-                }
-                b'm' => {
-                    let (obj, length) = BencodeObject::from_bencode(&buf[off..])?;
-                    (obj.upcast(), length)
-                }
-                b'i' => {
-                    let (obj, length) = BencodeNumber::from_bencode(&buf[off..])?;
-                    (obj.upcast(), length)
-                }
-                _b @ b'0'..=b'9' => {
-                    let (obj, length) = BencodeBytes::from_bencode(&buf[off..])?;
-                    (obj.upcast(), length)
-                }
+        *offset = 1;
+        while buf[*offset] != b'e' {
+            value.push(match buf[*offset] {
+                b'l' => BencodeArray::from_bencode_with_offset(&buf[*offset..], offset)?.upcast(),
+                b'm' => BencodeObject::from_bencode_with_offset(&buf[*offset..], offset)?.upcast(),
+                b'i' => BencodeNumber::from_bencode_with_offset(&buf[*offset..], offset)?.upcast(),
+                _b @ b'0'..=b'9' => BencodeBytes::from_bencode_with_offset(&buf[*offset..], offset)?.upcast(),
                 _ => unimplemented!()
-            };
-            off += length;
-
-            value.push(v);
+            });
         }
 
-        Ok((Self {
+        Ok(Self {
             value
-        }, 0))
+        })
     }
 }
 
