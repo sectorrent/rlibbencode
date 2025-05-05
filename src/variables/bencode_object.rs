@@ -120,7 +120,6 @@ impl FromBencode for BencodeObject {
                     let (v, l) = BencodeBytes::from_bencode_with_offset(&buf[off..])?;
                     (v.upcast(), l)
                 }
-                _ => unimplemented!()
             };
 
             off += l;
