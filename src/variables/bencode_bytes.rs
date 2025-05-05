@@ -1,12 +1,24 @@
 use std::any::Any;
 use std::{fmt, io};
 use std::fmt::Formatter;
+use std::str::from_utf8;
 use crate::variables::inter::bencode_types::BencodeTypes;
 use crate::variables::inter::bencode_variable::{BencodeCast, BencodeVariable, FromBencode, ToBencode};
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct BencodeBytes {
     value: Vec<u8>
+}
+
+impl BencodeBytes {
+    
+    pub fn as_bytes(&self) -> &[u8] {
+        &self.value
+    }
+    
+    pub fn as_str(&self) -> &str {
+        from_utf8(&self.value).unwrap()
+    }
 }
 
 impl BencodeVariable for BencodeBytes {

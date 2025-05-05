@@ -14,11 +14,6 @@ pub trait AddArray<V> {
     fn insert(&mut self, index: usize, value: V);
 }
 
-pub trait GetArrayCast<T> {
-
-    fn get_cast<V: BencodeCast<T>>(&self, index: usize) -> Option<V>;
-}
-
 #[derive(Debug, Clone)]
 pub struct BencodeArray {
     value: Vec<Box<dyn BencodeVariable>>
@@ -221,28 +216,6 @@ impl AddArray<Box<dyn BencodeVariable>> for BencodeArray {
 
     fn insert(&mut self, index: usize, value: Box<dyn BencodeVariable>) {
         self.value.insert(index, value);
-    }
-}
-
-
-
-impl GetArrayCast<BencodeNumber> for BencodeArray {
-
-    fn get_cast<V: BencodeCast<BencodeNumber>>(&self, index: usize) -> Option<V> {
-        self.value
-            .get(index)?
-            .as_any()
-            .downcast_ref::<BencodeNumber>()?.parse::<V>().ok()
-    }
-}
-
-impl GetArrayCast<BencodeBytes> for BencodeArray {
-
-    fn get_cast<V: BencodeCast<BencodeBytes>>(&self, index: usize) -> Option<V> {
-        self.value
-            .get(index)?
-            .as_any()
-            .downcast_ref::<BencodeBytes>()?.parse::<V>().ok()
     }
 }
 

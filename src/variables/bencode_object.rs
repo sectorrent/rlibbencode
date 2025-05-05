@@ -20,11 +20,6 @@ pub trait ObjectOptions<K> {
     fn remove(&mut self, key: K) -> Option<Box<dyn BencodeVariable>>;
 }
 
-pub trait GetObjectCast<K, T> {
-
-    fn get_cast<V: BencodeCast<T>>(&self, key: K) -> Option<V>;
-}
-
 pub trait GetObject<K> {
 
     fn get<V: BencodeVariable + 'static>(&self, key: K) -> Option<&V>;
@@ -336,38 +331,6 @@ impl_bencode_bytes_put_object_primitive!(
     (BencodeBytes, BencodeBytes, Vec<u8>),
     (BencodeBytes, BencodeBytes, &Vec<u8>),
     (BencodeBytes, BencodeBytes, &[u8])
-);
-
-
-macro_rules! impl_bencode_get_object_cast {
-    ($(($key:ty, $value:ty)),*) => {
-        $(
-            impl GetObjectCast<$key, $value> for BencodeObject {
-
-                fn get_cast<V: BencodeCast<$value>>(&self, key: $key) -> Option<V> {
-                    self.value
-                        .get(&BencodeBytes::from(key))?
-                        .as_any()
-                        .downcast_ref::<$value>()?.parse::<V>().ok()
-                }
-            }
-        )*
-    };
-}
-
-impl_bencode_get_object_cast!(
-    (String, BencodeNumber),
-    (String, BencodeBytes),
-    (&String, BencodeNumber),
-    (&String, BencodeBytes),
-    (&str, BencodeNumber),
-    (&str, BencodeBytes),
-    (&[u8], BencodeNumber),
-    (&[u8], BencodeBytes),
-    (Vec<u8>, BencodeNumber),
-    (Vec<u8>, BencodeBytes),
-    (&Vec<u8>, BencodeNumber),
-    (&Vec<u8>, BencodeBytes)
 );
 
 
