@@ -3,55 +3,71 @@ mod utils;
 
 #[macro_export]
 macro_rules! bencode {
-    ({ $($key:tt : $value:expr),* $(,)? }) => {{
+    ({ $($key:tt : $value:tt),* $(,)? }) => {{
         let mut ben = BencodeObject::new();
         $(
-            ben.put($key, $value);
+            ben.put($key, bencode!($value));
         )*
-        ben
+        Box::new(ben) as Box<dyn BencodeVariable>
     }};
 
-    ([ $($elem:expr),* $(,)? ]) => {{
+    ([ $($elem:tt),* $(,)? ]) => {{
         let mut ben = BencodeArray::new();
         $(
-            ben.push($elem);
+            ben.push(bencode!($elem));
         )*
-        ben
+        Box::new(ben) as Box<dyn BencodeVariable>
+    }};
+
+    ($val:expr) => {{
+        Box::<dyn BencodeVariable>::from($val)
     }};
 }
+
 
 #[cfg(test)]
 mod tests {
 
-    use crate::variables::bencode_object::{BencodeObject, GetObjectCast, GetObject};
-    use crate::variables::bencode_array::{BencodeArray, GetArrayCast};
+    use crate::variables::bencode_object::BencodeObject;
+    use crate::variables::bencode_array::BencodeArray;
     use crate::variables::inter::bencode_wrapper::ToBencode;
     use crate::variables::bencode_object::PutObject;
     use crate::variables::bencode_array::AddArray;
-    use crate::variables::bencode_bytes::BencodeBytes;
     use crate::variables::inter::bencode_variable::BencodeVariable;
 
     #[test]
     fn main() {
         let x = bencode!({
             "name": "Edward",
-            "t": "TEST"
+            "t": "TEST",
+            "b": [
+                "a",
+                12307123,
+                {
+                    "no": 123
+                }
+            ]
         });
         println!("{:?}", String::from_utf8(x.to_bencode()).unwrap());
 
-
+        /*
         let mut x = bencode!([
             "name",
             "t",
-            bencode!({
-                "x": "V",
-                "awd": 213,
-                "z": bencode!([
-                    "adiawhd",
-                    1238
-                ])
-            })
+            {
+                //"x": "V",
+                //"awd": 213,
+                //"z": [
+                //    "adiawhd",
+                //    1238
+                //]
+            }
         ]);
+
+        //let f = bencode!("asdasd");
+        //let f = bencode!(123123);
+
+        let x = Box::<dyn BencodeVariable>::from(10);
 
         x.get_mut::<BencodeObject>(2).unwrap().put("no", "ajwdiajwhjdoaiwd");
 
@@ -62,7 +78,7 @@ mod tests {
 
 
         let z = x.get::<BencodeObject>(2).unwrap().get::<BencodeArray>("z").unwrap().get_cast::<String>(0).unwrap();
-        println!("{}", z);
+        println!("{}", z);*/
 
         //println!("{}", x.get::<BencodeObject>(2).unwrap().get::<String>("x").unwrap());
 

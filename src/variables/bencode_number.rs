@@ -41,6 +41,15 @@ macro_rules! impl_bencode_number {
                     Ok(String::from_utf8(value.value.clone()).unwrap().parse::<$type>().unwrap())
                 }
             }
+
+            impl From<$type> for Box<dyn BencodeVariable> {
+
+                fn from(value: $type) -> Self {
+                    Box::new(BencodeNumber {
+                        value: value.to_string().as_bytes().to_vec()
+                    })
+                }
+            }
         )*
     }
 }

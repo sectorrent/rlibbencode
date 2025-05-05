@@ -293,6 +293,13 @@ macro_rules! impl_bencode_get_object {
                         .downcast_mut::<V>()
                 }
             }
+
+            impl PutObject<$type, Box<dyn BencodeVariable>> for BencodeObject {
+
+                fn put(&mut self, key: $type, value: Box<dyn BencodeVariable>) {
+                    self.value.insert(BencodeBytes::from(key), value);
+                }
+            }
         )*
     };
 }
@@ -317,14 +324,26 @@ macro_rules! impl_bencode_put_object {
 impl_bencode_put_object!(
     (String, BencodeArray),
     (String, BencodeObject),
+    (String, BencodeNumber),
+    (String, BencodeBytes),
     (&String, BencodeArray),
     (&String, BencodeObject),
+    (&String, BencodeNumber),
+    (&String, BencodeBytes),
     (&str, BencodeArray),
     (&str, BencodeObject),
+    (&str, BencodeNumber),
+    (&str, BencodeBytes),
     (&[u8], BencodeArray),
     (&[u8], BencodeObject),
+    (&[u8], BencodeNumber),
+    (&[u8], BencodeBytes),
     (Vec<u8>, BencodeArray),
     (Vec<u8>, BencodeObject),
+    (Vec<u8>, BencodeNumber),
+    (Vec<u8>, BencodeBytes),
     (&Vec<u8>, BencodeArray),
-    (&Vec<u8>, BencodeObject)
+    (&Vec<u8>, BencodeObject),
+    (&Vec<u8>, BencodeNumber),
+    (&Vec<u8>, BencodeBytes)
 );

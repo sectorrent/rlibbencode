@@ -86,6 +86,69 @@ impl From<&[u8]> for BencodeBytes {
     }
 }
 
+impl From<Vec<u8>> for Box<dyn BencodeVariable> {
+
+    fn from(value: Vec<u8>) -> Self {
+        Box::new(BencodeBytes {
+            value
+        })
+    }
+}
+
+impl From<&Vec<u8>> for Box<dyn BencodeVariable> {
+
+    fn from(value: &Vec<u8>) -> Self {
+        Box::new(BencodeBytes {
+            value: value.clone()
+        })
+    }
+}
+
+impl From<&str> for Box<dyn BencodeVariable> {
+
+    fn from(value: &str) -> Self {
+        Box::new(BencodeBytes {
+            value: value.as_bytes().to_vec()
+        })
+    }
+}
+
+impl From<String> for Box<dyn BencodeVariable> {
+
+    fn from(value: String) -> Self {
+        Box::new(BencodeBytes {
+            value: value.as_bytes().to_vec()
+        })
+    }
+}
+
+impl From<&String> for Box<dyn BencodeVariable> {
+
+    fn from(value: &String) -> Self {
+        Box::new(BencodeBytes {
+            value: value.as_bytes().to_vec()
+        })
+    }
+}
+
+impl<const N: usize> From<[u8; N]> for Box<dyn BencodeVariable> {
+
+    fn from(value: [u8; N]) -> Self {
+        Box::new(BencodeBytes {
+            value: value.to_vec()
+        })
+    }
+}
+
+impl From<&[u8]> for Box<dyn BencodeVariable> {
+
+    fn from(value: &[u8]) -> Self {
+        Box::new(BencodeBytes {
+            value: value.to_vec()
+        })
+    }
+}
+
 impl BencodeCast<BencodeBytes> for Vec<u8> {
 
     fn cast(value: &BencodeBytes) -> io::Result<Self> {

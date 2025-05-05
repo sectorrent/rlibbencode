@@ -173,6 +173,24 @@ impl AddArray<BencodeArray> for BencodeArray {
     }
 }
 
+
+
+
+
+
+impl AddArray<Box<dyn BencodeVariable>> for BencodeArray {
+
+    fn push(&mut self, value: Box<dyn BencodeVariable>) {
+        self.value.push(value);
+    }
+
+    fn insert(&mut self, index: usize, value: Box<dyn BencodeVariable>) {
+        self.value.insert(index, value);
+    }
+}
+
+
+
 impl GetArrayCast<BencodeNumber> for BencodeArray {
 
     fn get_cast<V: BencodeCast<BencodeNumber>>(&self, index: usize) -> Option<V> {
