@@ -8,7 +8,7 @@ macro_rules! bencode {
         $(
             ben.put($key, bencode!($value));
         )*
-        Box::new(ben) as Box<dyn BencodeVariable>
+        ben
     }};
 
     ([ $($elem:tt),* $(,)? ]) => {{
@@ -16,7 +16,7 @@ macro_rules! bencode {
         $(
             ben.push(bencode!($elem));
         )*
-        Box::new(ben) as Box<dyn BencodeVariable>
+        ben
     }};
 
     ($val:expr) => {{
