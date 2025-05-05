@@ -80,11 +80,11 @@ impl BencodeVariable for BencodeArray {
 impl ToBencode for BencodeArray {
 
     fn to_bencode(&self) -> Vec<u8> {
-        let mut buf = vec![b'l'];
+        let mut buf = vec![BencodeTypes::Array.prefix()];
         for e in &self.value {
             buf.extend(e.to_bencode());
         }
-        buf.push(b'e');
+        buf.push(BencodeTypes::Array.suffix());
         buf
     }
 }
@@ -92,28 +92,28 @@ impl ToBencode for BencodeArray {
 impl FromBencode for BencodeArray {
 
     fn from_bencode_with_offset(buf: &[u8]) -> io::Result<(Self, usize)> {
-        if buf[0] != b'l' {
+        if !BencodeTypes::from_code(buf[0]).eq(&BencodeTypes::Array) {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "Invalid prefix for object"));
         }
 
         let mut value = Vec::new();
 
         let mut off = 1;
-        while buf[off] != b'e' {
-            let (v, l) = match buf[off] {
-                b'l' => {
+        while buf[off] != BencodeTypes::Array.suffix() {
+            let (v, l) = match BencodeTypes::from_code(buf[off]) {
+                BencodeTypes::Array => {
                     let (v, l) = BencodeArray::from_bencode_with_offset(&buf[off..])?;
                     (v.upcast(), l)
-                },
-                b'd' => {
+                }
+                BencodeTypes::Object => {
                     let (v, l) = BencodeObject::from_bencode_with_offset(&buf[off..])?;
                     (v.upcast(), l)
                 }
-                b'i' => {
+                BencodeTypes::Number => {
                     let (v, l) = BencodeNumber::from_bencode_with_offset(&buf[off..])?;
                     (v.upcast(), l)
                 }
-                _b @ b'0'..=b'9' => {
+                BencodeTypes::Bytes => {
                     let (v, l) = BencodeBytes::from_bencode_with_offset(&buf[off..])?;
                     (v.upcast(), l)
                 }
@@ -202,11 +202,6 @@ impl AddArray<BencodeArray> for BencodeArray {
         self.value.insert(index, Box::new(value));
     }
 }
-
-
-
-
-
 
 impl AddArray<Box<dyn BencodeVariable>> for BencodeArray {
 

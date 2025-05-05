@@ -189,7 +189,7 @@ impl ToBencode for BencodeBytes {
     fn to_bencode(&self) -> Vec<u8> {
         let mut buf = Vec::new();
         buf.extend_from_slice(self.value.len().to_string().as_bytes());
-        buf.push(b':');
+        buf.push(BencodeTypes::Bytes.delimiter());
         buf.extend_from_slice(&self.value);
         buf
     }
@@ -198,12 +198,12 @@ impl ToBencode for BencodeBytes {
 impl FromBencode for BencodeBytes {
 
     fn from_bencode_with_offset(buf: &[u8]) -> io::Result<(Self, usize)> {
-        if !(buf[0] >= b'0' && buf[0] <= b'9') {
+        if !BencodeTypes::from_code(buf[0]).eq(&BencodeTypes::Bytes) {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "Invalid prefix for bytes"));
         }
 
         let mut off = 0;
-        while buf[off] != b':' {
+        while buf[off] != BencodeTypes::Bytes.delimiter() {
             off += 1;
         }
 

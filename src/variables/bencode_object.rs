@@ -79,12 +79,12 @@ impl BencodeVariable for BencodeObject {
 impl ToBencode for BencodeObject {
 
     fn to_bencode(&self) -> Vec<u8> {
-        let mut buf = vec![b'd'];
+        let mut buf = vec![BencodeTypes::Object.prefix()];
         for (k, v) in self.value.iter() {
             buf.extend(k.to_bencode());
             buf.extend(v.to_bencode());
         }
-        buf.push(b'e');
+        buf.push(BencodeTypes::Object.suffix());
         buf
     }
 }
@@ -92,31 +92,31 @@ impl ToBencode for BencodeObject {
 impl FromBencode for BencodeObject {
 
     fn from_bencode_with_offset(buf: &[u8]) -> io::Result<(Self, usize)> {
-        if buf[0] != b'd' {
+        if !BencodeTypes::from_code(buf[0]).eq(&BencodeTypes::Object) {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "Invalid prefix for object"));
         }
 
         let mut value = OrderedMap::new();
 
         let mut off = 1;
-        while buf[off] != b'e' {
+        while buf[off] != BencodeTypes::Object.suffix() {
             let (k, l) = BencodeBytes::from_bencode_with_offset(&buf[off..])?;
             off += l;
 
-            let (v, l) = match buf[off] {
-                b'l' => {
+            let (v, l) = match BencodeTypes::from_code(buf[off]) {
+                BencodeTypes::Array => {
                     let (v, l) = BencodeArray::from_bencode_with_offset(&buf[off..])?;
                     (v.upcast(), l)
-                },
-                b'd' => {
+                }
+                BencodeTypes::Object => {
                     let (v, l) = BencodeObject::from_bencode_with_offset(&buf[off..])?;
                     (v.upcast(), l)
                 }
-                b'i' => {
+                BencodeTypes::Number => {
                     let (v, l) = BencodeNumber::from_bencode_with_offset(&buf[off..])?;
                     (v.upcast(), l)
                 }
-                _b @ b'0'..=b'9' => {
+                BencodeTypes::Bytes => {
                     let (v, l) = BencodeBytes::from_bencode_with_offset(&buf[off..])?;
                     (v.upcast(), l)
                 }

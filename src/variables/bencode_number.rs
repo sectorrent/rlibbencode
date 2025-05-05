@@ -69,9 +69,9 @@ impl ToBencode for BencodeNumber {
 
     fn to_bencode(&self) -> Vec<u8> {
         let mut buf = Vec::new();
-        buf.push(b'i');
+        buf.push(BencodeTypes::Number.prefix());
         buf.extend_from_slice(&self.value);
-        buf.push(b'e');
+        buf.push(BencodeTypes::Number.suffix());
         buf
     }
 }
@@ -79,12 +79,12 @@ impl ToBencode for BencodeNumber {
 impl FromBencode for BencodeNumber {
 
     fn from_bencode_with_offset(buf: &[u8]) -> io::Result<(Self, usize)> {
-        if buf[0] != b'i' {
+        if !BencodeTypes::from_code(buf[0]).eq(&BencodeTypes::Number) {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "Invalid prefix for number"));
         }
 
         let mut off = 1;
-        while buf[off] != b'e' {
+        while buf[off] != BencodeTypes::Number.suffix() {
             off += 1;
         }
 
