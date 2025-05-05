@@ -1,59 +1,13 @@
 use std::any::Any;
-use std::io;
-use std::str::{from_utf8, FromStr};
-
-use crate::variables::inter::bencode_variable::BencodeVariable;
+use std::{fmt, io};
+use std::fmt::Formatter;
 use crate::variables::inter::bencode_types::BencodeTypes;
+use crate::variables::inter::bencode_variable::{BencodeCast, BencodeVariable, FromBencode, ToBencode};
 
-#[derive(Debug, Eq, Hash, PartialEq, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct BencodeNumber {
-    n: Vec<u8>,
-    s: usize
+    value: Vec<u8>
 }
-
-impl BencodeNumber {
-
-    pub fn parse<V>(&self) -> io::Result<V> where V: FromStr {
-        let str = from_utf8(&self.n).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
-        str.parse::<V>().map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "Failed to parse number."))
-    }
-}
-
-macro_rules! impl_decodable_number {
-    ($($type:ty)*) => {
-        $(
-            impl From<$type> for BencodeNumber {
-
-                fn from(value: $type) -> Self {
-                    let value = value.to_string().into_bytes();
-                    let s = value.len()+2;
-
-                    Self {
-                        n: value,
-                        s
-                    }
-                    /*
-                    let value = value.to_string();
-                    let size = value.len()+2;
-
-                    let bytes = value.as_ptr();
-                    let len = value.len();
-                    forget(value);
-
-                    unsafe {
-                        Self {
-                            n: from_raw_parts(bytes, len),
-                            s: size
-                        }
-                    }
-                    */
-                }
-            }
-        )*
-    }
-}
-
-impl_decodable_number!(u8 u16 u32 u64 u128 usize i8 i16 i32 i64 i128 isize f32 f64);
 
 impl BencodeVariable for BencodeNumber {
 
@@ -61,40 +15,8 @@ impl BencodeVariable for BencodeNumber {
         BencodeTypes::Number
     }
 
-    fn encode(&self) -> Vec<u8> {
-        let mut r: Vec<u8> = Vec::with_capacity(self.s);
-
-        r.push(BencodeTypes::Number.prefix());
-        r.extend_from_slice(&self.n);
-        r.push(BencodeTypes::Number.suffix());
-        r
-    }
-
-    fn decode_with_offset(buf: &[u8], off: usize) -> io::Result<Self> where Self: Sized {
-        let type_ = BencodeTypes::type_by_prefix(buf[off])?;
-        if type_ != BencodeTypes::Number {
-            return Err(io::Error::new(io::ErrorKind::InvalidData, "Byte array is not a bencode number."));
-        }
-
-        let mut off = off+1;
-
-        let mut c = [0u8; 32];
-        let mut s = off;
-
-        while buf[off] != BencodeTypes::Number.suffix() {
-            c[off - s] = buf[off];
-            off += 1;
-        }
-
-        let bytes = buf[s..off].to_vec();
-
-        off += 1;
-        s = off+1-s;
-
-        Ok(Self {
-            n: bytes,
-            s
-        })
+    fn upcast(self) -> Box<dyn BencodeVariable> {
+        Box::new(self)
     }
 
     fn as_any(&self) -> &dyn Any {
@@ -105,11 +27,76 @@ impl BencodeVariable for BencodeNumber {
         self
     }
 
-    fn byte_size(&self) -> usize {
-        self.s
+    fn clone_box(&self) -> Box<dyn BencodeVariable> {
+        Box::new(self.clone())
     }
+}
 
-    fn to_string(&self) -> String {
-        String::from_utf8_lossy(&self.n).to_string()
+macro_rules! impl_bencode_number {
+    ($($type:ty)*) => {
+        $(
+            impl From<$type> for BencodeNumber {
+
+                fn from(value: $type) -> Self {
+                    Self {
+                        value: value.to_string().as_bytes().to_vec()
+                    }
+                }
+            }
+
+            impl BencodeCast<BencodeNumber> for $type {
+
+                fn cast(value: &BencodeNumber) -> io::Result<Self> {
+                    Ok(String::from_utf8(value.value.clone()).unwrap().parse::<$type>().unwrap())
+                }
+            }
+
+            impl From<$type> for Box<dyn BencodeVariable> {
+
+                fn from(value: $type) -> Self {
+                    Box::new(BencodeNumber {
+                        value: value.to_string().as_bytes().to_vec()
+                    })
+                }
+            }
+        )*
+    }
+}
+
+impl_bencode_number!(u8 u16 u32 u64 u128 usize i8 i16 i32 i64 i128 isize f32 f64);
+
+impl ToBencode for BencodeNumber {
+
+    fn to_bencode(&self) -> Vec<u8> {
+        let mut buf = Vec::new();
+        buf.push(b'i');
+        buf.extend_from_slice(&self.value);
+        buf.push(b'e');
+        buf
+    }
+}
+
+impl FromBencode for BencodeNumber {
+
+    fn from_bencode_with_offset(buf: &[u8]) -> io::Result<(Self, usize)> {
+        if buf[0] != b'i' {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, "Invalid prefix for number"));
+        }
+
+        let mut off = 1;
+        while buf[off] != b'e' {
+            off += 1;
+        }
+
+        Ok((Self {
+            value: buf[1..off].to_vec()
+        }, off + 1))
+    }
+}
+
+impl fmt::Display for BencodeNumber {
+
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", String::from_utf8(self.value.clone()).unwrap())
     }
 }

@@ -1,104 +1,96 @@
 pub mod variables;
-pub mod utils;
+mod utils;
+
+#[macro_export]
+macro_rules! bencode {
+    ({ $($key:tt : $value:tt),* $(,)? }) => {{
+        let mut ben = BencodeObject::new();
+        $(
+            ben.put($key, bencode!($value));
+        )*
+        ben
+    }};
+
+    ([ $($elem:tt),* $(,)? ]) => {{
+        let mut ben = BencodeArray::new();
+        $(
+            ben.push(bencode!($elem));
+        )*
+        ben
+    }};
+
+    ($val:ident) => {{
+        $val
+    }};
+
+    ($val:expr) => {{
+        Box::<dyn BencodeVariable>::from($val)
+    }};
+}
+
 
 #[cfg(test)]
 mod tests {
 
-    use crate::variables::bencode_array::{AddArray, BencodeArray};
-    use crate::variables::bencode_object::{BencodeObject, PutObject};
-    use crate::variables::inter::bencode_variable::BencodeVariable;
+    use crate::variables::bencode_object::BencodeObject;
+    use crate::variables::bencode_array::BencodeArray;
+    use crate::variables::bencode_object::PutObject;
+    use crate::variables::bencode_array::AddArray;
+    use crate::variables::bencode_bytes::BencodeBytes;
+    use crate::variables::bencode_number::BencodeNumber;
+    use crate::variables::inter::bencode_variable::{BencodeVariable, FromBencode, ToBencode};
 
     #[test]
-    fn main() {
-        let mut obj = BencodeObject::new();
-        obj.put("b", "bar");
-        obj.put("c", "far");
-        obj.put("n", 100);
-        obj.put("y", [ 0u8, 0u8, 0u8, 0u8, 0u8, 0u8 ]);
+    fn object() {
+        let a = bencode!({
+            "a": "HELLO WORLD",
+            "b": 100.2
+        });
+        let b = BencodeObject::from_bencode(&a.to_bencode()).unwrap();
+        assert_eq!(a.as_any().downcast_ref::<BencodeObject>().unwrap(), &b);
 
-        let mut arr = BencodeArray::new();
-        arr.add("n");
-        arr.add(123.56);
-        obj.put("array", arr);
-
-        let mut obj2 = BencodeObject::new();
-        obj2.put("z", "another one");
-        obj.put("object", obj2);
-        obj.get_object_mut("object").unwrap().put("n", "mutate");
-
-        //z.deref_mut();
-        //obj.put("blank", "blonk");
-
-
-        let encoded = obj.encode();
-        println!("EXPECTED: {} ACTUAL: {}", obj.byte_size(), encoded.len());
-        println!("{:?}", encoded);
-
-        println!("{}", obj.to_string());
-
-        let decoded = BencodeObject::decode(&encoded).unwrap();
-        println!("{}", decoded.to_string());
-    }
-
-    /*
-    #[test]
-    fn number() {
-        let original = 100.67;
-        let encoded = original.to_bencode();
-        let decoded = f64::from_bencode(&encoded, &mut 0);
-
-        assert_eq!(original, decoded);
-
-        println!("Bencode Number Encoding & Decoding 100%");
-    }
-
-    #[test]
-    fn bytes() {
-        let original = "blank test".to_string();
-        let encoded = original.to_bencode();
-        let decoded = String::from_bencode(&encoded, &mut 0);
-
-        assert_eq!(original, decoded);
-
-        println!("Bencode String Encoding & Decoding 100%");
+        let a = b"d1:a11:HELLO WORLD1:bi100.2ee";
+        let b = BencodeObject::from_bencode(a).unwrap();
+        assert_eq!(a.to_vec(), b.to_bencode());
+        println!("Object encoding and decoding passed.");
     }
 
     #[test]
     fn array() {
-        let mut vec = Vec::new();
-        vec.push("number 1");
-        vec.push("num 2");
-        let encoded = vec.to_bencode();
-        let decoded = Vec::<String>::from_bencode(&encoded, &mut 0);
+        let a = bencode!([
+            "HELLO WORLD",
+            100.2
+        ]);
+        let b = BencodeArray::from_bencode(&a.to_bencode()).unwrap();
+        assert_eq!(a.as_any().downcast_ref::<BencodeArray>().unwrap(), &b);
 
-        assert_eq!(vec.len(), decoded.len());
-
-        for i in 0..=decoded.len()-1 {
-            assert_eq!(vec[i], decoded[i]);
-        }
-
-        println!("Bencode Array Encoding & Decoding 100%");
+        let a = b"l11:HELLO WORLDi100.2ee";
+        let b = BencodeArray::from_bencode(a).unwrap();
+        assert_eq!(a.to_vec(), b.to_bencode());
+        println!("Array encoding and decoding passed.");
     }
 
     #[test]
-    fn object() {
-        let mut dic = HashMap::new();
-        dic.insert("hello".to_string(), "123123".to_string());
-        dic.insert("bloop".to_string(), "another test".to_string());
-        let encoded = dic.to_bencode();
-        let decoded = HashMap::<String, String>::from_bencode(&encoded, &mut 0);
+    fn number() {
+        let a = bencode!(100.2);
+        let b = BencodeNumber::from_bencode(&a.to_bencode()).unwrap();
+        assert_eq!(a.as_any().downcast_ref::<BencodeNumber>().unwrap(), &b);
 
-        assert_eq!(dic.len(), decoded.len());
-
-        for key in decoded.keys() {
-            if dic.contains_key(key) {
-                assert_eq!(dic.get(key).unwrap(), decoded.get(key).unwrap());
-            } else {
-                panic!("Key '{}' does not exist in both maps", key);
-            }
-        }
-
-        println!("Bencode Object Encoding & Decoding 100%");
+        let a = b"i100.2e";
+        let b = BencodeNumber::from_bencode(a).unwrap();
+        assert_eq!(a.to_vec(), b.to_bencode());
+        println!("Number encoding and decoding passed.");
     }
-    */
+
+    #[test]
+    fn bytes() {
+        let a = bencode!("HELLO WORLD");
+        let b = BencodeBytes::from_bencode(&a.to_bencode()).unwrap();
+        assert_eq!(a.as_any().downcast_ref::<BencodeBytes>().unwrap(), &b);
+
+        let a = b"11:HELLO WORLD";
+        let b = BencodeBytes::from_bencode(a).unwrap();
+        assert_eq!(a.to_vec(), b.to_bencode());
+        println!("Byte encoding and decoding passed.");
+    }
 }
