@@ -41,7 +41,8 @@ mod tests {
 
     #[test]
     fn main() {
-        let d = BencodeObject::new();
+        let d  = "d1:v5:0.1.01:t6:create1:qd6:record1:a5:class2:in6:domain18:uncentralized.unet7:addressi2130706433e3:ttli300e11:cache_flushi1e5:locali1eee".as_bytes();
+        let d = BencodeObject::from_bencode(d).unwrap();
         let mut x = bencode!({
             "name": "Edward",
             "t": "TEST",
@@ -59,11 +60,6 @@ mod tests {
         println!("{:?}", z.as_any().downcast_ref::<BencodeBytes>().unwrap().parse::<String>());
 
         println!("{:?}", String::from_utf8(x.to_bencode()).unwrap());
-
-
-        let d: Vec<u8>  = "d1:v5:0.1.01:t6:create1:qd6:record1:a5:class2:in6:domain18:uncentralized.unet7:addressi2130706433e3:ttli300e11:cache_flushi1e5:locali1eee".as_bytes().to_vec();
-        let z = BencodeObject::from_bencode(&d).unwrap();
-        println!("{:?}", String::from_utf8(z.to_bencode()));
 
         /*
         let mut x = bencode!([
