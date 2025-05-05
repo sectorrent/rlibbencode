@@ -1,6 +1,7 @@
 use std::any::Any;
 use std::fmt::{Debug, Display};
 use std::io;
+use crate::variables::inter::bencode_types::BencodeTypes;
 
 pub trait BencodeVariable: Display + Debug + ToBencode + FromBencode {
 
@@ -11,6 +12,8 @@ pub trait BencodeVariable: Display + Debug + ToBencode + FromBencode {
     {
         V::cast(self)
     }
+    
+    fn get_type(&self) -> BencodeTypes;
 
     fn upcast(self) -> Box<dyn BencodeVariable>;
 

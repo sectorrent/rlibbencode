@@ -1,6 +1,7 @@
 use std::any::Any;
 use std::{fmt, io};
 use std::fmt::Formatter;
+use crate::variables::inter::bencode_types::BencodeTypes;
 use crate::variables::inter::bencode_variable::{BencodeCast, BencodeVariable, FromBencode, ToBencode};
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
@@ -9,6 +10,10 @@ pub struct BencodeBytes {
 }
 
 impl BencodeVariable for BencodeBytes {
+
+    fn get_type(&self) -> BencodeTypes {
+        BencodeTypes::Bytes
+    }
 
     fn upcast(self) -> Box<dyn BencodeVariable> {
         Box::new(self)

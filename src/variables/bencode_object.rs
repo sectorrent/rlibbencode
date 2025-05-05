@@ -5,6 +5,7 @@ use crate::utils::ordered_map::OrderedMap;
 use crate::variables::bencode_array::BencodeArray;
 use crate::variables::bencode_bytes::BencodeBytes;
 use crate::variables::bencode_number::BencodeNumber;
+use crate::variables::inter::bencode_types::BencodeTypes;
 use crate::variables::inter::bencode_variable::{BencodeCast, BencodeVariable, FromBencode, ToBencode};
 
 pub trait PutObject<K, V> {
@@ -47,6 +48,10 @@ impl BencodeObject {
 
 
 impl BencodeVariable for BencodeObject {
+
+    fn get_type(&self) -> BencodeTypes {
+        BencodeTypes::Object
+    }
 
     fn upcast(self) -> Box<dyn BencodeVariable> {
         Box::new(self)
@@ -368,31 +373,22 @@ impl_bencode_put_object!(
 impl fmt::Display for BencodeObject {
 
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        writeln!(f, "{{")?;
+        write!(f, "{{\r\n")?;
 
         for (key, val) in self.value.iter() {
             let key_str = format!("{}", key);
             let val_str = format!("{}", val);
 
-            let colored = format!("\t\u{001b}[0;31m{key_str}\u{001b}[0m: \u{001b}[0;33m{val_str}\u{001b}[0m");
-            //let indented = val_str.replace("\r\n", "\r\n\t");
-            //format!("\t\u{001b}[0;32m{key_str}\u{001b}[0m: {indented}")
-
-            /*
-            let colored = match val.get_type() {
-                BencodeType::NUMBER => format!("\t\u{001b}[0;31m{key_str}\u{001b}[0m: \u{001b}[0;33m{val_str}\u{001b}[0m"),
-                BencodeType::BYTES  => format!("\t\u{001b}[0;31m{key_str}\u{001b}[0m: \u{001b}[0;34m{val_str}\u{001b}[0m"),
-                BencodeType::ARRAY | BencodeType::OBJECT => {
+            writeln!(f, "{}\r", match val.get_type() {
+                BencodeTypes::Number => format!("\t\u{001b}[0;31m{key_str}\u{001b}[0m: \u{001b}[0;33m{val_str}\u{001b}[0m"),
+                BencodeTypes::Bytes => format!("\t\u{001b}[0;31m{key_str}\u{001b}[0m: \u{001b}[0;34m{val_str}\u{001b}[0m"),
+                BencodeTypes::Array | BencodeTypes::Object => {
                     let indented = val_str.replace("\r\n", "\r\n\t");
                     format!("\t\u{001b}[0;32m{key_str}\u{001b}[0m: {indented}")
-                },
-            };
-            */
-
-            writeln!(f, "{colored}\r")?;
+                }
+            })?;
         }
 
         write!(f, "}}")
-        //write!(f, "{}", String::from_utf8(self.value.clone()).unwrap())
     }
 }

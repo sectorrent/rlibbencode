@@ -4,6 +4,7 @@ use std::fmt::Formatter;
 use crate::variables::bencode_bytes::BencodeBytes;
 use crate::variables::bencode_number::BencodeNumber;
 use crate::variables::bencode_object::BencodeObject;
+use crate::variables::inter::bencode_types::BencodeTypes;
 use crate::variables::inter::bencode_variable::{BencodeCast, BencodeVariable, FromBencode, ToBencode};
 
 pub trait AddArray<V> {
@@ -51,6 +52,10 @@ impl BencodeArray {
 }
 
 impl BencodeVariable for BencodeArray {
+
+    fn get_type(&self) -> BencodeTypes {
+        BencodeTypes::Array
+    }
 
     fn upcast(self) -> Box<dyn BencodeVariable> {
         Box::new(self)
@@ -219,6 +224,21 @@ impl GetArrayCast<BencodeBytes> for BencodeArray {
 impl fmt::Display for BencodeArray {
 
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", "")
+        write!(f, "{{\r\n")?;
+
+        for val in &self.value {
+            let val_str = format!("{}", val);
+
+            writeln!(f, "{}\r", match val.get_type() {
+                BencodeTypes::Number => format!("\t\u{001b}[0;33m{val_str}\u{001b}[0m"),
+                BencodeTypes::Bytes => format!("\t\u{001b}[0;34m{val_str}\u{001b}[0m"),
+                BencodeTypes::Array | BencodeTypes::Object => {
+                    let indented = val_str.replace("\r\n", "\r\n\t");
+                    format!("\t{indented}")
+                }
+            })?;
+        }
+
+        write!(f, "}}")
     }
 }
