@@ -170,6 +170,8 @@ impl_bencode_put_object_primitive!(
     (String, BencodeBytes, String),
     (String, BencodeBytes, &str),
     (String, BencodeBytes, Vec<u8>),
+    (String, BencodeBytes, &Vec<u8>),
+    (String, BencodeBytes, &[u8]),
 
     (&String, BencodeNumber, u8),
     (&String, BencodeNumber, u16),
@@ -189,6 +191,8 @@ impl_bencode_put_object_primitive!(
     (&String, BencodeBytes, String),
     (&String, BencodeBytes, &str),
     (&String, BencodeBytes, Vec<u8>),
+    (&String, BencodeBytes, &Vec<u8>),
+    (&String, BencodeBytes, &[u8]),
 
     (&str, BencodeNumber, u8),
     (&str, BencodeNumber, u16),
@@ -208,6 +212,8 @@ impl_bencode_put_object_primitive!(
     (&str, BencodeBytes, String),
     (&str, BencodeBytes, &str),
     (&str, BencodeBytes, Vec<u8>),
+    (&str, BencodeBytes, &Vec<u8>),
+    (&str, BencodeBytes, &[u8]),
 
     (&[u8], BencodeNumber, u8),
     (&[u8], BencodeNumber, u16),
@@ -227,6 +233,8 @@ impl_bencode_put_object_primitive!(
     (&[u8], BencodeBytes, String),
     (&[u8], BencodeBytes, &str),
     (&[u8], BencodeBytes, Vec<u8>),
+    (&[u8], BencodeBytes, &Vec<u8>),
+    (&[u8], BencodeBytes, &[u8]),
 
     (&Vec<u8>, BencodeNumber, u8),
     (&Vec<u8>, BencodeNumber, u16),
@@ -246,6 +254,8 @@ impl_bencode_put_object_primitive!(
     (&Vec<u8>, BencodeBytes, String),
     (&Vec<u8>, BencodeBytes, &str),
     (&Vec<u8>, BencodeBytes, Vec<u8>),
+    (&Vec<u8>, BencodeBytes, &Vec<u8>),
+    (&Vec<u8>, BencodeBytes, &[u8]),
 
     (Vec<u8>, BencodeNumber, u8),
     (Vec<u8>, BencodeNumber, u16),
@@ -264,8 +274,33 @@ impl_bencode_put_object_primitive!(
 
     (Vec<u8>, BencodeBytes, String),
     (Vec<u8>, BencodeBytes, &str),
-    (Vec<u8>, BencodeBytes, Vec<u8>)
+    (Vec<u8>, BencodeBytes, Vec<u8>),
+    (Vec<u8>, BencodeBytes, &Vec<u8>),
+    (Vec<u8>, BencodeBytes, &[u8])
 );
+
+
+macro_rules! impl_bencode_bsize_put_object_primitive {
+    ($($type:ty)*) => {
+        $(
+            impl<const N: usize> PutObject<$type, [u8; N]> for BencodeObject {
+
+                fn put(&mut self, key: $type, value: [u8; N]) {
+                    self.value.insert(BencodeBytes::from(key), Box::new(BencodeBytes::from(value)));
+                }
+            }
+        )*
+    };
+}
+
+impl_bencode_bsize_put_object_primitive!(String &String &str &[u8] Vec<u8> &Vec<u8>);
+
+impl<const N: usize> PutObject<BencodeBytes, [u8; N]> for BencodeObject {
+
+    fn put(&mut self, key: BencodeBytes, value: [u8; N]) {
+        self.value.insert(key, Box::new(BencodeBytes::from(value)));
+    }
+}
 
 macro_rules! impl_bencode_bytes_put_object_primitive {
     ($(($key:ty, $_type:ty, $value:ty)),*) => {
@@ -298,7 +333,9 @@ impl_bencode_bytes_put_object_primitive!(
 
     (BencodeBytes, BencodeBytes, String),
     (BencodeBytes, BencodeBytes, &str),
-    (BencodeBytes, BencodeBytes, Vec<u8>)
+    (BencodeBytes, BencodeBytes, Vec<u8>),
+    (BencodeBytes, BencodeBytes, &Vec<u8>),
+    (BencodeBytes, BencodeBytes, &[u8])
 );
 
 
