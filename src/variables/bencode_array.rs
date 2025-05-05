@@ -43,6 +43,10 @@ impl BencodeArray {
             .as_any_mut()
             .downcast_mut::<V>()
     }
+
+    fn remove(&mut self, index: usize) -> Box<dyn BencodeVariable> {
+        self.value.remove(index)
+    }
 }
 
 impl BencodeVariable for BencodeArray {

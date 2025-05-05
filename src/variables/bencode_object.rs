@@ -1,5 +1,4 @@
 use std::any::Any;
-use std::hash::Hash;
 use std::io;
 use crate::utils::ordered_map::OrderedMap;
 use crate::variables::bencode_array::BencodeArray;
