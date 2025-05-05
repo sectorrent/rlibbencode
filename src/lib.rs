@@ -1,4 +1,5 @@
 pub mod variables;
+mod utils;
 
 #[macro_export]
 macro_rules! bencode {

@@ -1,104 +1,12 @@
 use std::any::Any;
-use std::collections::{BTreeMap, HashMap};
 use std::hash::Hash;
 use std::io;
+use crate::utils::ordered_map::OrderedMap;
 use crate::variables::bencode_array::BencodeArray;
 use crate::variables::bencode_bytes::BencodeBytes;
 use crate::variables::bencode_number::BencodeNumber;
 use crate::variables::inter::bencode_variable::{BencodeCast, BencodeVariable};
 use crate::variables::inter::bencode_wrapper::{FromBencode, ToBencode};
-
-impl<K: ToBencode, V: ToBencode> ToBencode for HashMap<K, V> {
-
-    fn to_bencode(&self) -> Vec<u8> {
-        let mut buf = vec![b'm'];
-        for (k, v) in self {
-            buf.extend(k.to_bencode());
-            buf.extend(v.to_bencode());
-        }
-        buf.push(b'e');
-        buf
-    }
-}
-
-impl<K, V> FromBencode for HashMap<K, V>
-where
-    K: FromBencode + Eq + Hash,
-    V: FromBencode,
-{
-
-    fn from_bencode(buf: &[u8]) -> io::Result<(Self, usize)> {
-        if buf[0] != b'm' {
-            return Err(io::Error::new(io::ErrorKind::InvalidInput, "Invalid prefix for list"));
-        }
-
-        let mut _self = Self::new();
-
-        let mut off = 1;
-        while buf[off] != b'e' {
-            let (k, length) = K::from_bencode(&buf[off..])?;
-            off += length;
-
-            let (v, length) = V::from_bencode(&buf[off..])?;
-            off += length;
-
-            _self.insert(k, v);
-        }
-
-        Ok((_self, off + 2))
-    }
-}
-
-impl<K: ToBencode, V: ToBencode> ToBencode for BTreeMap<K, V> {
-
-    fn to_bencode(&self) -> Vec<u8> {
-        let mut buf = vec![b'm'];
-        for (k, v) in self {
-            buf.extend(k.to_bencode());
-            buf.extend(v.to_bencode());
-        }
-        buf.push(b'e');
-        buf
-    }
-}
-
-impl<K, V> FromBencode for BTreeMap<K, V>
-where
-    K: FromBencode + Eq + Hash + Ord,
-    V: FromBencode,
-{
-
-    fn from_bencode(buf: &[u8]) -> io::Result<(Self, usize)> {
-        if buf[0] != b'm' {
-            return Err(io::Error::new(io::ErrorKind::InvalidInput, "Invalid prefix for list"));
-        }
-
-        let mut _self = Self::new();
-
-        let mut off = 1;
-        while buf[off] != b'e' {
-            let (k, length) = K::from_bencode(&buf[off..])?;
-            off += length;
-
-            let (v, length) = V::from_bencode(&buf[off..])?;
-            off += length;
-
-            _self.insert(k, v);
-        }
-
-        Ok((_self, off + 2))
-    }
-}
-
-
-
-
-
-
-
-
-
-
 
 pub trait PutObject<K, V> {
 
@@ -119,14 +27,14 @@ pub trait GetObject<K> {
 
 //#[derive(Clone)]
 pub struct BencodeObject {
-    value: HashMap<BencodeBytes, Box<dyn BencodeVariable>>
+    value: OrderedMap<BencodeBytes, Box<dyn BencodeVariable>>
 }
 
 impl BencodeObject {
 
     pub fn new() -> Self {
         Self {
-            value: HashMap::new()
+            value: OrderedMap::new()
         }
     }
 }
@@ -151,7 +59,7 @@ impl ToBencode for BencodeObject {
 
     fn to_bencode(&self) -> Vec<u8> {
         let mut buf = vec![b'm'];
-        for (k, v) in &self.value {
+        for (k, v) in self.value.iter() {
             buf.extend(k.to_bencode());
             buf.extend(v.to_bencode());
         }
@@ -167,7 +75,7 @@ impl FromBencode for BencodeObject {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "Invalid prefix for object"));
         }
 
-        let mut value = HashMap::new();
+        let mut value = OrderedMap::new();
 
         let mut off = 1;
         while buf[off] != b'e' {
@@ -420,13 +328,3 @@ impl_bencode_put_object!(
     (&Vec<u8>, BencodeArray),
     (&Vec<u8>, BencodeObject)
 );
-
-
-
-
-
-
-
-
-
-

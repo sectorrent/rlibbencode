@@ -26,35 +26,6 @@ impl BencodeVariable for BencodeNumber {
 macro_rules! impl_bencode_number {
     ($($type:ty)*) => {
         $(
-            impl ToBencode for $type {
-
-                fn to_bencode(&self) -> Vec<u8> {
-                    let mut buf = Vec::new();
-                    buf.push(b'i');
-                    buf.extend_from_slice(self.to_string().as_bytes());
-                    buf.push(b'e');
-                    buf
-                }
-            }
-
-            impl FromBencode for $type {
-
-                fn from_bencode(buf: &[u8]) -> io::Result<(Self, usize)> {
-                    if buf[0] != b'i' {
-                        return Err(io::Error::new(io::ErrorKind::InvalidInput, "Invalid prefix for number"));
-                    }
-
-                    let mut off = 1;
-                    while buf[off] != b'e' {
-                        off += 1;
-                    }
-
-                    Ok((String::from_utf8(buf[1..off].to_vec())
-                        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?.parse::<$type>()
-                        .map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "Failed to parse number."))?, off + 1))
-                }
-            }
-
             impl From<$type> for BencodeNumber {
 
                 fn from(value: $type) -> Self {

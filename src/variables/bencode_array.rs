@@ -1,59 +1,10 @@
 use std::any::Any;
-use std::collections::{LinkedList, VecDeque};
 use std::io;
 use crate::variables::bencode_bytes::BencodeBytes;
 use crate::variables::bencode_number::BencodeNumber;
 use crate::variables::bencode_object::BencodeObject;
 use crate::variables::inter::bencode_variable::{BencodeCast, BencodeVariable};
 use crate::variables::inter::bencode_wrapper::{FromBencode, ToBencode};
-
-macro_rules! impl_bencode_array {
-    ($($type:ident => $push:ident),*) => {
-        $(
-            impl <T: ToBencode> ToBencode for $type<T> {
-
-                fn to_bencode(&self) -> Vec<u8> {
-                    let mut buf = vec![b'l'];
-                    for e in self {
-                        buf.extend(e.to_bencode());
-                    }
-                    buf.push(b'e');
-                    buf
-                }
-            }
-
-            impl<T: FromBencode> FromBencode for $type<T> {
-
-                fn from_bencode(buf: &[u8]) -> io::Result<(Self, usize)> {
-                    if buf[0] != b'l' {
-                        return Err(io::Error::new(io::ErrorKind::InvalidInput, "Invalid prefix for list"));
-                    }
-
-                    let mut _self = Self::new();
-
-                    let mut off = 1;
-                    while buf[off] != b'e' {
-                        let (t, length) = T::from_bencode(&buf[off..])?;
-                        off += length;
-
-                        _self.$push(t);
-                    }
-
-                    Ok((_self, off + 2))
-                }
-            }
-        )*
-    };
-}
-
-impl_bencode_array!(
-    Vec => push,
-    VecDeque => push_back,
-    LinkedList => push_back
-);
-
-
-
 
 pub trait AddArray<V> {
 
