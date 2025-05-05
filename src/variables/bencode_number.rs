@@ -26,6 +26,10 @@ impl BencodeVariable for BencodeNumber {
     fn as_any_mut(&mut self) -> &mut dyn Any {
         self
     }
+
+    fn clone_box(&self) -> Box<dyn BencodeVariable> {
+        Box::new(self.clone())
+    }
 }
 
 macro_rules! impl_bencode_number {

@@ -19,7 +19,7 @@ pub trait GetArrayCast<T> {
     fn get_cast<V: BencodeCast<T>>(&self, index: usize) -> Option<V>;
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct BencodeArray {
     value: Vec<Box<dyn BencodeVariable>>
 }
@@ -75,6 +75,10 @@ impl BencodeVariable for BencodeArray {
 
     fn as_any_mut(&mut self) -> &mut dyn Any {
         self
+    }
+
+    fn clone_box(&self) -> Box<dyn BencodeVariable> {
+        Box::new(self.clone())
     }
 }
 
@@ -226,6 +230,36 @@ impl GetArrayCast<BencodeBytes> for BencodeArray {
             .get(index)?
             .as_any()
             .downcast_ref::<BencodeBytes>()?.parse::<V>().ok()
+    }
+}
+
+impl PartialEq for BencodeArray {
+
+    fn eq(&self, other: &Self) -> bool {
+        if self.value.len() != other.value.len() {
+            return false;
+        }
+
+        for (a, b) in self.value.iter().zip(other.value.iter()) {
+            if a.get_type() != b.get_type() {
+                return false;
+            }
+
+            if !match a.get_type() {
+                BencodeTypes::Object => a.as_any().downcast_ref::<BencodeObject>().unwrap().eq(
+                    b.as_any().downcast_ref::<BencodeObject>().unwrap()),
+                BencodeTypes::Array => a.as_any().downcast_ref::<BencodeArray>().unwrap().eq(
+                        b.as_any().downcast_ref::<BencodeArray>().unwrap()),
+                BencodeTypes::Number => a.as_any().downcast_ref::<BencodeNumber>().unwrap().eq(
+                    b.as_any().downcast_ref::<BencodeNumber>().unwrap()),
+                BencodeTypes::Bytes => a.as_any().downcast_ref::<BencodeBytes>().unwrap().eq(
+                    b.as_any().downcast_ref::<BencodeBytes>().unwrap()),
+            } {
+                return false;
+            }
+        }
+
+        true
     }
 }
 

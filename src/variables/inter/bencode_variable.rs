@@ -12,7 +12,7 @@ pub trait BencodeVariable: Display + Debug + ToBencode + FromBencode {
     {
         V::cast(self)
     }
-    
+
     fn get_type(&self) -> BencodeTypes;
 
     fn upcast(self) -> Box<dyn BencodeVariable>;
@@ -20,6 +20,15 @@ pub trait BencodeVariable: Display + Debug + ToBencode + FromBencode {
     fn as_any(&self) -> &dyn Any;
 
     fn as_any_mut(&mut self) -> &mut dyn Any;
+    
+    fn clone_box(&self) -> Box<dyn BencodeVariable>;
+}
+
+impl Clone for Box<dyn BencodeVariable> {
+    
+    fn clone(&self) -> Box<dyn BencodeVariable> {
+        self.clone_box()
+    }
 }
 
 pub trait BencodeCast<T>: Sized {
