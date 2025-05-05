@@ -49,6 +49,14 @@ impl BencodeArray {
     fn remove(&mut self, index: usize) -> Box<dyn BencodeVariable> {
         self.value.remove(index)
     }
+
+    pub fn len(&self) -> usize {
+        self.value.len()
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = &Box<dyn BencodeVariable>> {
+        self.value.iter()
+    }
 }
 
 impl BencodeVariable for BencodeArray {
@@ -227,14 +235,12 @@ impl fmt::Display for BencodeArray {
         write!(f, "[\r\n")?;
 
         for val in &self.value {
-            let val_str = format!("{}", val);
-
             writeln!(f, "{}\r", match val.get_type() {
-                BencodeTypes::Number => format!("\t\u{001b}[0;33m{val_str}\u{001b}[0m"),
-                BencodeTypes::Bytes => format!("\t\u{001b}[0;34m{val_str}\u{001b}[0m"),
+                BencodeTypes::Number => format!("\t\u{001b}[0;33m{}\u{001b}[0m", val),
+                BencodeTypes::Bytes => format!("\t\u{001b}[0;34m{}\u{001b}[0m", val),
                 BencodeTypes::Array | BencodeTypes::Object => {
-                    let indented = val_str.replace("\r\n", "\r\n\t");
-                    format!("\t{indented}")
+                    let val = format!("{}", val).replace("\r\n", "\r\n\t");
+                    format!("\t{}", val)
                 }
             })?;
         }

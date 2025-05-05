@@ -44,6 +44,17 @@ impl BencodeObject {
             value: OrderedMap::new()
         }
     }
+
+    pub fn len(&self) -> usize {
+        self.value.len()
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = (&BencodeBytes, &Box<dyn BencodeVariable>)> {
+        self.value.keys().iter().filter_map(move |key| {
+            let value = self.value.get(key)?;
+            Some((key, value))
+        })
+    }
 }
 
 
@@ -252,6 +263,40 @@ impl_bencode_put_object_primitive!(
     (Vec<u8>, BencodeBytes, Vec<u8>)
 );
 
+macro_rules! impl_bencode_bytes_put_object_primitive {
+    ($(($key:ty, $_type:ty, $value:ty)),*) => {
+        $(
+            impl PutObject<$key, $value> for BencodeObject {
+
+                fn put(&mut self, key: $key, value: $value) {
+                    self.value.insert(key, Box::new(<$_type>::from(value)));
+                }
+            }
+        )*
+    };
+}
+
+impl_bencode_bytes_put_object_primitive!(
+    (BencodeBytes, BencodeNumber, u8),
+    (BencodeBytes, BencodeNumber, u16),
+    (BencodeBytes, BencodeNumber, u32),
+    (BencodeBytes, BencodeNumber, u64),
+    (BencodeBytes, BencodeNumber, u128),
+    (BencodeBytes, BencodeNumber, usize),
+    (BencodeBytes, BencodeNumber, i8),
+    (BencodeBytes, BencodeNumber, i16),
+    (BencodeBytes, BencodeNumber, i32),
+    (BencodeBytes, BencodeNumber, i64),
+    (BencodeBytes, BencodeNumber, i128),
+    (BencodeBytes, BencodeNumber, isize),
+    (BencodeBytes, BencodeNumber, f32),
+    (BencodeBytes, BencodeNumber, f64),
+
+    (BencodeBytes, BencodeBytes, String),
+    (BencodeBytes, BencodeBytes, &str),
+    (BencodeBytes, BencodeBytes, Vec<u8>)
+);
+
 
 macro_rules! impl_bencode_get_object_cast {
     ($(($key:ty, $value:ty)),*) => {
@@ -328,6 +373,40 @@ macro_rules! impl_bencode_get_object {
 
 impl_bencode_get_object!(String &String &str &[u8] Vec<u8> &Vec<u8>);
 
+impl GetObject<&BencodeBytes> for BencodeObject {
+
+    fn get<V: BencodeVariable + 'static>(&self, key: &BencodeBytes) -> Option<&V> {
+        self.value
+            .get(key)?
+            .as_any()
+            .downcast_ref::<V>()
+    }
+
+    fn get_mut<V: BencodeVariable + 'static>(&mut self, key: &BencodeBytes) -> Option<&mut V> {
+        self.value
+            .get_mut(key)?
+            .as_any_mut()
+            .downcast_mut::<V>()
+    }
+}
+
+impl PutObject<BencodeBytes, Box<dyn BencodeVariable>> for BencodeObject {
+
+    fn put(&mut self, key: BencodeBytes, value: Box<dyn BencodeVariable>) {
+        self.value.insert(key, value);
+    }
+}
+
+impl ObjectOptions<&BencodeBytes> for BencodeObject {
+
+    fn contains_key(&self, key: &BencodeBytes) -> bool {
+        self.value.contains_key(key)
+    }
+
+    fn remove(&mut self, key: &BencodeBytes) -> Option<Box<dyn BencodeVariable>> {
+        self.value.remove(key)
+    }
+}
 
 
 macro_rules! impl_bencode_put_object {
@@ -370,21 +449,39 @@ impl_bencode_put_object!(
     (&Vec<u8>, BencodeBytes)
 );
 
+
+macro_rules! impl_bencode_bytes_put_object {
+    ($(($key:ty, $value:ty)),*) => {
+        $(
+            impl PutObject<$key, $value> for BencodeObject {
+
+                fn put(&mut self, key: $key, value: $value) {
+                    self.value.insert(BencodeBytes::from(key), Box::new(value));
+                }
+            }
+        )*
+    };
+}
+
+impl_bencode_bytes_put_object!(
+    (BencodeBytes, BencodeArray),
+    (BencodeBytes, BencodeObject),
+    (BencodeBytes, BencodeNumber),
+    (BencodeBytes, BencodeBytes)
+);
+
 impl fmt::Display for BencodeObject {
 
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "{{\r\n")?;
 
         for (key, val) in self.value.iter() {
-            let key_str = format!("{}", key);
-            let val_str = format!("{}", val);
-
             writeln!(f, "{}\r", match val.get_type() {
-                BencodeTypes::Number => format!("\t\u{001b}[0;31m{key_str}\u{001b}[0m: \u{001b}[0;33m{val_str}\u{001b}[0m"),
-                BencodeTypes::Bytes => format!("\t\u{001b}[0;31m{key_str}\u{001b}[0m: \u{001b}[0;34m{val_str}\u{001b}[0m"),
+                BencodeTypes::Number => format!("\t\u{001b}[0;31m{}\u{001b}[0m: \u{001b}[0;33m{}\u{001b}[0m", key, val),
+                BencodeTypes::Bytes => format!("\t\u{001b}[0;31m{}\u{001b}[0m: \u{001b}[0;34m{}\u{001b}[0m", key, val),
                 BencodeTypes::Array | BencodeTypes::Object => {
-                    let indented = val_str.replace("\r\n", "\r\n\t");
-                    format!("\t\u{001b}[0;32m{key_str}\u{001b}[0m: {indented}")
+                    let val = format!("{}", val).replace("\r\n", "\r\n\t");
+                    format!("\t\u{001b}[0;32m{}\u{001b}[0m: {}", key, val)
                 }
             })?;
         }
