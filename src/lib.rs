@@ -19,6 +19,10 @@ macro_rules! bencode {
         ben
     }};
 
+    ($val:ident) => {{
+        $val
+    }};
+
     ($val:expr) => {{
         Box::<dyn BencodeVariable>::from($val)
     }};
@@ -37,6 +41,7 @@ mod tests {
 
     #[test]
     fn main() {
+        let d = BencodeObject::new();
         let mut x = bencode!({
             "name": "Edward",
             "t": "TEST",
@@ -46,7 +51,8 @@ mod tests {
                 {
                     "no": 123
                 }
-            ]
+            ],
+            "p": d
         });
 
         let z = x.remove("name".to_string()).unwrap();//.as_any().downcast_ref::<BencodeObject>().unwrap().to_bencode();
