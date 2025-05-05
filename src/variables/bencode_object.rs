@@ -63,7 +63,7 @@ impl BencodeVariable for BencodeObject {
 impl ToBencode for BencodeObject {
 
     fn to_bencode(&self) -> Vec<u8> {
-        let mut buf = vec![b'm'];
+        let mut buf = vec![b'd'];
         for (k, v) in self.value.iter() {
             buf.extend(k.to_bencode());
             buf.extend(v.to_bencode());
@@ -75,31 +75,45 @@ impl ToBencode for BencodeObject {
 
 impl FromBencode for BencodeObject {
 
-    fn from_bencode_with_offset(buf: &[u8], offset: &mut usize) -> io::Result<Self> {
-        if buf[0] != b'm' {
+    fn from_bencode_with_offset(buf: &[u8]) -> io::Result<(Self, usize)> {
+        if buf[0] != b'd' {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "Invalid prefix for object"));
         }
 
         let mut value = OrderedMap::new();
 
-        *offset = 1;
-        while buf[*offset] != b'e' {
-            let k = BencodeBytes::from_bencode_with_offset(&buf[*offset..], offset)?;
+        let mut off = 1;
+        while buf[off] != b'e' {
+            let (k, l) = BencodeBytes::from_bencode_with_offset(&buf[off..])?;
+            off += l;
 
-            value.insert(k, match buf[*offset] {
-                b'l' => BencodeArray::from_bencode_with_offset(&buf[*offset..], offset)?.upcast(),
-                b'm' => BencodeObject::from_bencode_with_offset(&buf[*offset..], offset)?.upcast(),
-                b'i' => BencodeNumber::from_bencode_with_offset(&buf[*offset..], offset)?.upcast(),
-                _b @ b'0'..=b'9' => BencodeBytes::from_bencode_with_offset(&buf[*offset..], offset)?.upcast(),
+            let (v, l) = match buf[off] {
+                b'l' => {
+                    let (v, l) = BencodeArray::from_bencode_with_offset(&buf[off..])?;
+                    (v.upcast(), l)
+                },
+                b'd' => {
+                    let (v, l) = BencodeObject::from_bencode_with_offset(&buf[off..])?;
+                    (v.upcast(), l)
+                }
+                b'i' => {
+                    let (v, l) = BencodeNumber::from_bencode_with_offset(&buf[off..])?;
+                    (v.upcast(), l)
+                }
+                _b @ b'0'..=b'9' => {
+                    let (v, l) = BencodeBytes::from_bencode_with_offset(&buf[off..])?;
+                    (v.upcast(), l)
+                }
                 _ => unimplemented!()
-            });
+            };
+
+            off += l;
+            value.insert(k, v);
         }
 
-        *offset += 1;
-
-        Ok(Self {
+        Ok((Self {
             value
-        })
+        }, off + 1))
     }
 }
 

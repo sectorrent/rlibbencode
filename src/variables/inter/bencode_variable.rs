@@ -31,8 +31,9 @@ pub trait ToBencode {
 pub trait FromBencode {
 
     fn from_bencode(buf: &[u8]) -> io::Result<Self> where Self: Sized {
-        Self::from_bencode_with_offset(buf, &mut 0)
+        let (x, _) = Self::from_bencode_with_offset(buf)?;
+        Ok(x)
     }
 
-    fn from_bencode_with_offset(buf: &[u8], offset: &mut usize) -> io::Result<Self> where Self: Sized;
+    fn from_bencode_with_offset(buf: &[u8]) -> io::Result<(Self, usize)> where Self: Sized;
 }
