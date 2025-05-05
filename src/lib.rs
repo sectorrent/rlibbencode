@@ -28,16 +28,17 @@ macro_rules! bencode {
 #[cfg(test)]
 mod tests {
 
-    use crate::variables::bencode_object::BencodeObject;
+    use crate::variables::bencode_object::{BencodeObject, ObjectOptions};
     use crate::variables::bencode_array::BencodeArray;
     use crate::variables::inter::bencode_wrapper::ToBencode;
     use crate::variables::bencode_object::PutObject;
     use crate::variables::bencode_array::AddArray;
+    use crate::variables::bencode_bytes::BencodeBytes;
     use crate::variables::inter::bencode_variable::BencodeVariable;
 
     #[test]
     fn main() {
-        let x = bencode!({
+        let mut x = bencode!({
             "name": "Edward",
             "t": "TEST",
             "b": [
@@ -48,6 +49,10 @@ mod tests {
                 }
             ]
         });
+
+        let z = x.remove("name".to_string()).unwrap();//.as_any().downcast_ref::<BencodeObject>().unwrap().to_bencode();
+        println!("{:?}", z.as_any().downcast_ref::<BencodeBytes>().unwrap().parse::<String>());
+
         println!("{:?}", String::from_utf8(x.to_bencode()).unwrap());
 
         /*

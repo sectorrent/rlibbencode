@@ -13,6 +13,13 @@ pub trait PutObject<K, V> {
     fn put(&mut self, key: K, value: V);
 }
 
+pub trait ObjectOptions<K> {
+
+    fn contains_key(&self, key: K) -> bool;
+
+    fn remove(&mut self, key: K) -> Option<Box<dyn BencodeVariable>>;
+}
+
 pub trait GetObjectCast<K, T> {
 
     fn get_cast<V: BencodeCast<T>>(&self, key: K) -> Option<V>;
@@ -298,6 +305,17 @@ macro_rules! impl_bencode_get_object {
 
                 fn put(&mut self, key: $type, value: Box<dyn BencodeVariable>) {
                     self.value.insert(BencodeBytes::from(key), value);
+                }
+            }
+
+            impl ObjectOptions<$type> for BencodeObject {
+
+                fn contains_key(&self, key: $type) -> bool {
+                    self.value.contains_key(&BencodeBytes::from(key))
+                }
+
+                fn remove(&mut self, key: $type) -> Option<Box<dyn BencodeVariable>> {
+                    self.value.remove(&BencodeBytes::from(key))
                 }
             }
         )*
