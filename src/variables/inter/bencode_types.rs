@@ -10,9 +10,9 @@ impl BencodeTypes {
 
     pub fn from_code(c: u8) -> Self {
         match c {
-            b'i' => Self::Number,
             b'l' => Self::Array,
             b'd' => Self::Object,
+            b'i' => Self::Number,
             b'0'..=b'9' => Self::Bytes,
             _ => unimplemented!()
         }
@@ -20,18 +20,18 @@ impl BencodeTypes {
 
     pub fn prefix(&self) -> u8 {
         match self {
-            Self::Number => b'i',
             Self::Array => b'l',
             Self::Object => b'd',
+            Self::Number => b'i',
             _ => unimplemented!()
         }
     }
 
     pub fn suffix(&self) -> u8 {
         match self {
-            Self::Number => b'e',
             Self::Array => b'e',
             Self::Object => b'e',
+            Self::Number => b'e',
             _ => unimplemented!()
         }
     }
