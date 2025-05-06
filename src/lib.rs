@@ -28,7 +28,6 @@ macro_rules! bencode {
     }};
 }
 
-
 #[cfg(test)]
 mod tests {
 
@@ -92,5 +91,43 @@ mod tests {
         let b = BencodeBytes::from_bencode(a).unwrap();
         assert_eq!(a.to_vec(), b.to_bencode());
         println!("Byte encoding and decoding passed.");
+    }
+
+    #[test]
+    fn nested_object() {
+        let a = bencode!({
+            "a": "HELLO WORLD",
+            "b": 100.2,
+            "c": {
+                "d": "NEST",
+                "e": 66
+            }
+        });
+        let b = BencodeObject::from_bencode(&a.to_bencode()).unwrap();
+        assert_eq!(a.as_any().downcast_ref::<BencodeObject>().unwrap(), &b);
+
+        let a = b"d1:a11:HELLO WORLD1:bi100.2e1:cd1:d4:NEST1:ei66eee";
+        let b = BencodeObject::from_bencode(a).unwrap();
+        assert_eq!(a.to_vec(), b.to_bencode());
+        println!("Object nesting encoding and decoding passed.");
+    }
+
+    #[test]
+    fn nested_array() {
+        let a = bencode!([
+            "HELLO WORLD",
+            100.2,
+            [
+                "NEST",
+                66
+            ]
+        ]);
+        let b = BencodeArray::from_bencode(&a.to_bencode()).unwrap();
+        assert_eq!(a.as_any().downcast_ref::<BencodeArray>().unwrap(), &b);
+
+        let a = b"l11:HELLO WORLDi100.2el4:NESTi66eee";
+        let b = BencodeArray::from_bencode(a).unwrap();
+        assert_eq!(a.to_vec(), b.to_bencode());
+        println!("Array nesting encoding and decoding passed.");
     }
 }
