@@ -2,6 +2,13 @@
 name = "rlibbencode"
 version = "0.1.0"
 edition = "2021"
+authors = ["DrBrad <brad@bradeagle.com>"]
+description = "Rust Bencode library"
+license = "MIT"
+repository = "https://github.com/sectorrent/rlibbencode"
+readme = "README.md"
+keywords = ["bencode", "parser"]
+categories = ["network-programming", "command-line-utilities"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
